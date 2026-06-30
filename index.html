@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connect IQ — Payroll &amp; Org Plan</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+:root {
+  --ink: #080F1E;
+  --ink-900: #0B1424;
+  --ink-800: #101B30;
+  --ink-700: #18253c;
+  --amber: #E8A020;
+  --amber-bright: #F2B341;
+  --amber-dim: rgba(232,160,32,0.12);
+  --border: rgba(255,255,255,0.08);
+  --paper: #F6F8FB;
+  --card-border: #DDE3EC;
+  --txt: #0B1424;
+  --txt-2: #475569;
+  --txt-3: #8a98ac;
+  --danger: #F0433E;
+  --warn: #E8A020;
+  --safe: #1FB573;
+  --display: 'Space Grotesk', 'Inter', sans-serif;
+  --body: 'Inter', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--paper); font-family: var(--body); margin: 0; color: var(--txt); -webkit-font-smoothing: antialiased; }
+.tnum { font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* COMMAND BAR */
+.cmd-bar { position: sticky; top: 0; z-index: 40; background: var(--ink); border-bottom: 1px solid var(--border); box-shadow: 0 1px 0 rgba(232,160,32,0.06), 0 8px 30px rgba(8,15,30,0.18); }
+.cmd-bar-inner { max-width: 1160px; margin: 0 auto; padding: 0 28px; display: flex; align-items: stretch; min-height: 64px; }
+.cmd-brand { display: flex; align-items: center; gap: 11px; padding-right: 24px; border-right: 1px solid var(--border); }
+.cmd-brand-icon { width: 32px; height: 32px; background: var(--amber); border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 12px rgba(232,160,32,0.35); }
+.cmd-brand-name { font-family: var(--display); font-weight: 600; font-size: 0.86rem; color: #fff; letter-spacing: -0.01em; line-height: 1.2; }
+.cmd-brand-sub { font-size: 0.62rem; color: rgba(255,255,255,0.34); letter-spacing: 0.02em; }
+.cmd-metrics { display: flex; flex: 1; align-items: stretch; }
+.cmd-metric { display: flex; flex-direction: column; justify-content: center; padding: 0 20px; border-right: 1px solid var(--border); gap: 4px; }
+.cmd-metric-label { font-family: var(--display); font-size: 0.56rem; font-weight: 600; color: rgba(255,255,255,0.36); text-transform: uppercase; letter-spacing: 0.11em; }
+.cmd-metric-value { font-family: var(--mono); font-size: 0.98rem; font-weight: 500; color: #fff; line-height: 1; font-variant-numeric: tabular-nums; }
+.cmd-metric-value.amber { color: var(--amber-bright); }
+.cmd-metric-value.danger { color: var(--danger); }
+.cmd-metric-value.safe { color: var(--safe); }
+.cmd-actions { display: flex; align-items: center; gap: 8px; padding-left: 18px; }
+.btn-ghost { display: flex; align-items: center; gap: 6px; font-family: var(--display); font-size: 0.72rem; font-weight: 500; color: rgba(255,255,255,0.6); background: transparent; border: 1px solid rgba(255,255,255,0.12); border-radius: 9px; padding: 8px 14px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.btn-ghost:hover { background: rgba(255,255,255,0.07); color: #fff; border-color: rgba(255,255,255,0.2); }
+.btn-ghost:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.btn-amber { display: flex; align-items: center; gap: 6px; font-family: var(--display); font-size: 0.72rem; font-weight: 600; color: var(--ink); background: var(--amber); border: none; border-radius: 9px; padding: 9px 16px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.btn-amber:hover { background: var(--amber-bright); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(232,160,32,0.45); }
+.btn-amber:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.btn-amber:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* SYNC & SHARE */
+.btn-ghost-active { border-color: rgba(31,181,115,0.4) !important; background: rgba(31,181,115,0.08) !important; }
+.sync-dot-inline { display: inline-block; width: 6px; height: 6px; border-radius: 50%; }
+.dot-green { background: var(--safe); box-shadow: 0 0 4px rgba(31,181,115,0.5); }
+.dot-amber { background: var(--amber); animation: pulse 1.2s ease-in-out infinite; }
+.dot-dim { background: rgba(255,255,255,0.25); }
+
+.share-panel { position: absolute; top: calc(100% + 8px); right: 0; width: 370px; background: #fff; border-radius: 14px; border: 1px solid var(--card-border); box-shadow: 0 12px 40px rgba(8,15,30,0.18), 0 0 0 1px rgba(0,0,0,0.03); z-index: 100; padding: 18px 20px; font-size: 0.82rem; color: var(--txt); }
+.share-backdrop { position: fixed; inset: 0; z-index: 99; }
+.share-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-family: var(--display); color: var(--ink); }
+.share-close { background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 0.78rem; padding: 4px; border-radius: 6px; }
+.share-close:hover { background: #f1f5f9; color: #475569; }
+
+.share-desc { font-size: 0.74rem; color: var(--txt-2); line-height: 1.55; margin: 0 0 14px; }
+
+.share-btn-primary { width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; font-family: var(--display); font-size: 0.78rem; font-weight: 600; color: var(--ink); background: var(--amber); border: none; border-radius: 10px; padding: 11px 16px; cursor: pointer; transition: all 0.15s; }
+.share-btn-primary:hover { background: var(--amber-bright); box-shadow: 0 4px 14px rgba(232,160,32,0.4); }
+
+.share-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+.share-divider::before,.share-divider::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+.share-divider span { font-size: 0.64rem; color: #94a3b8; font-family: var(--display); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+
+.share-join-row { display: flex; gap: 6px; }
+.share-input { flex: 1; font-family: var(--mono); font-size: 0.74rem; padding: 9px 11px; border: 1.5px solid #e2e8f0; border-radius: 9px; outline: none; color: var(--ink); background: #fafbfd; }
+.share-input:focus { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(232,160,32,0.12); background: #fff; }
+.share-input::placeholder { color: #b4bfce; }
+.share-btn-join { font-family: var(--display); font-size: 0.72rem; font-weight: 600; padding: 9px 16px; border: none; border-radius: 9px; background: var(--ink); color: #fff; cursor: pointer; white-space: nowrap; transition: all 0.12s; }
+.share-btn-join:hover { background: var(--ink-700); }
+.share-btn-join:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.share-connected-badge { display: inline-flex; align-items: center; gap: 7px; font-family: var(--display); font-size: 0.68rem; font-weight: 600; color: #0f8a55; background: rgba(31,181,115,0.1); padding: 5px 12px; border-radius: 999px; }
+
+.share-field-group { margin-top: 12px; }
+.share-field-label { font-family: var(--display); font-size: 0.58rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 5px; display: block; }
+.share-copy-row { display: flex; gap: 6px; align-items: stretch; }
+.share-code { flex: 1; font-family: var(--mono); font-size: 0.76rem; background: #f7f9fc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; color: var(--ink); word-break: break-all; line-height: 1.4; display: flex; align-items: center; }
+.share-code-sm { font-size: 0.62rem; color: var(--txt-2); }
+.share-btn-copy { width: 36px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; color: #64748b; font-size: 0.72rem; transition: all 0.12s; flex-shrink: 0; }
+.share-btn-copy:hover { background: #e2e8f0; color: var(--ink); }
+
+.share-status { margin-top: 12px; font-size: 0.68rem; color: var(--txt-3); display: flex; align-items: center; gap: 7px; }
+
+.share-btn-disconnect { margin-top: 14px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--display); font-size: 0.68rem; font-weight: 500; color: #ef4444; background: #fef2f2; border: 1px solid #fecaca; border-radius: 9px; padding: 8px 14px; cursor: pointer; transition: all 0.12s; }
+.share-btn-disconnect:hover { background: #fee2e2; border-color: #f87171; }
+
+.share-error { margin-top: 12px; font-size: 0.7rem; color: #dc2626; background: #fef2f2; border-radius: 8px; padding: 9px 12px; display: flex; align-items: flex-start; gap: 7px; line-height: 1.45; }
+.share-error i { margin-top: 2px; flex-shrink: 0; }
+
+@media (max-width: 640px) { .share-panel { width: calc(100vw - 32px); right: -60px; } }
+
+/* RUNWAY GAUGE — signature element */
+.runway-strip { background: linear-gradient(180deg, var(--ink-900) 0%, var(--ink-800) 100%); border-bottom: 1px solid var(--border); padding: 0 28px; }
+.runway-strip-inner { max-width: 1160px; margin: 0 auto; padding: 14px 0; display: flex; align-items: center; gap: 18px; }
+.runway-label { font-family: var(--display); font-size: 0.6rem; font-weight: 600; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.13em; white-space: nowrap; }
+.runway-gauge { flex: 1; position: relative; }
+.runway-bar-track { position: relative; height: 9px; border-radius: 999px;
+  background: linear-gradient(90deg,
+    rgba(240,67,62,0.28) 0%, rgba(240,67,62,0.28) 16.6%,
+    rgba(232,160,32,0.26) 16.6%, rgba(232,160,32,0.26) 33.3%,
+    rgba(31,181,115,0.22) 33.3%, rgba(31,181,115,0.22) 100%);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.35); }
+.runway-bar-fill { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 3px; height: 17px; border-radius: 3px; transition: left 0.5s cubic-bezier(.2,.8,.2,1), background 0.5s ease; box-shadow: 0 0 0 2px rgba(8,15,30,0.55), 0 0 10px rgba(232,160,32,0.5); }
+.runway-ticks { display: flex; justify-content: space-between; margin-top: 4px; padding: 0 1px; }
+.runway-tick { font-family: var(--mono); font-size: 0.54rem; color: rgba(255,255,255,0.26); }
+.runway-readout { display: flex; align-items: baseline; gap: 4px; min-width: 86px; justify-content: flex-end; }
+.runway-months { font-family: var(--mono); font-size: 1.15rem; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
+.runway-months-unit { font-family: var(--display); font-size: 0.62rem; font-weight: 500; color: rgba(255,255,255,0.4); }
+.runway-badge { display: inline-flex; align-items: center; gap: 6px; font-family: var(--display); font-size: 0.62rem; font-weight: 600; padding: 5px 11px; border-radius: 999px; white-space: nowrap; letter-spacing: 0.01em; }
+.runway-badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+.runway-badge.danger { background: rgba(240,67,62,0.16); color: #FF8480; }
+.runway-badge.danger .dot { background: var(--danger); animation: pulse 1.4s ease-in-out infinite; }
+.runway-badge.warn { background: rgba(232,160,32,0.16); color: var(--amber-bright); }
+.runway-badge.warn .dot { background: var(--amber); }
+.runway-badge.safe { background: rgba(31,181,115,0.16); color: #4DD79E; }
+.runway-badge.safe .dot { background: var(--safe); }
+.runway-badge.idle { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.4); }
+.runway-badge.idle .dot { background: rgba(255,255,255,0.3); }
+@keyframes pulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(240,67,62,0.5); } 50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(240,67,62,0); } }
+
+/* LAYOUT */
+.page-body { max-width: 1160px; margin: 0 auto; padding: 36px 28px 90px; }
+.section-gap { margin-top: 34px; }
+
+/* SECTION HEADER — labeled left-rule */
+.section-eyebrow { display: flex; align-items: center; gap: 13px; margin-bottom: 16px; }
+.section-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; flex-shrink: 0; }
+.section-icon.amber { background: var(--amber-dim); color: var(--amber); }
+.section-icon.blue { background: rgba(59,130,246,0.12); color: #3b82f6; }
+.section-icon.purple { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+.section-title { font-family: var(--display); font-size: 1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
+.section-sub { font-size: 0.7rem; color: var(--txt-3); margin-top: 1px; }
+
+/* CARDS */
+.card { background: #fff; border-radius: 14px; border: 1px solid var(--card-border); box-shadow: 0 1px 2px rgba(8,15,30,0.04), 0 4px 16px rgba(8,15,30,0.03); }
+
+/* CAPITAL */
+.capital-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 22px 26px; }
+.capital-input-wrap { display: flex; align-items: center; gap: 7px; background: #f7f9fc; border: 1.5px solid #e2e8f0; border-radius: 11px; padding: 9px 15px; transition: all 0.15s; }
+.capital-input-wrap:focus-within { border-color: var(--amber); background: #fff; box-shadow: 0 0 0 4px rgba(232,160,32,0.13); }
+.capital-input-wrap span { font-family: var(--mono); font-size: 1.05rem; color: #94a3b8; }
+.capital-input { font-family: var(--mono); font-size: 1.3rem; font-weight: 500; color: var(--ink); border: none; background: transparent; outline: none; width: 150px; text-align: right; font-variant-numeric: tabular-nums; }
+.capital-input::-webkit-outer-spin-button, .capital-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.capital-input { -moz-appearance: textfield; }
+
+/* TABLES */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { font-family: var(--display); font-size: 0.58rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; padding: 0 9px 13px; border-bottom: 1px solid #eef2f7; text-align: left; }
+.data-table th.r { text-align: right; }
+.data-table td { padding: 4px 6px; border-bottom: 1px solid #f4f7fa; vertical-align: middle; }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: #fafbfd; }
+.data-table tfoot td { padding: 15px 9px 3px; border-top: 1.5px solid #e6ebf1; }
+
+.row-input { width: 100%; border: 1px solid transparent; background: transparent; border-radius: 7px; padding: 8px 9px; font-size: 0.84rem; font-weight: 500; color: #1e293b; outline: none; transition: all 0.12s; font-family: var(--body); }
+.row-input:hover { background: #f7f9fc; border-color: #e8ecf0; }
+.row-input:focus { border-color: var(--amber); background: #fff; box-shadow: 0 0 0 2px rgba(232,160,32,0.16); }
+.row-input:focus-visible { outline: none; }
+.row-input::placeholder { color: #cbd5e1; }
+.row-input.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+.add-row-btn { display: inline-flex; align-items: center; gap: 6px; font-family: var(--display); font-size: 0.7rem; font-weight: 600; color: var(--amber); background: var(--amber-dim); border: 1px dashed rgba(232,160,32,0.35); border-radius: 8px; padding: 7px 14px; cursor: pointer; transition: all 0.15s; margin-top: 12px; }
+.add-row-btn:hover { background: rgba(232,160,32,0.2); border-color: var(--amber); }
+.add-row-btn:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.delete-btn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: none; background: transparent; color: #cbd5e1; border-radius: 6px; cursor: pointer; transition: all 0.12s; opacity: 0; }
+tr:hover .delete-btn { opacity: 1; }
+.delete-btn:hover { color: #ef4444; background: #fef2f2; }
+.delete-btn:focus-visible { opacity: 1; outline: 2px solid #ef4444; outline-offset: 1px; }
+.total-label { font-family: var(--display); font-size: 0.8rem; font-weight: 600; color: #334155; }
+.total-value { font-family: var(--mono); font-size: 1rem; font-weight: 500; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+.sub-value { font-family: var(--mono); font-size: 0.76rem; color: #64748b; text-align: right; font-variant-numeric: tabular-nums; }
+.data-table td.r { text-align: right; }
+.data-table td.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.data-table tfoot td.total-value { font-size: 0.84rem; }
+
+/* BUDGET SUMMARY */
+.budget-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.budget-cell { background: #fafbfd; border: 1px solid var(--card-border); border-radius: 11px; padding: 15px 17px; }
+.budget-cell-label { font-family: var(--display); font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; color: var(--txt-3); }
+.budget-cell-value { font-family: var(--mono); font-size: 1.5rem; font-weight: 500; color: var(--txt); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.budget-cell-note { font-size: 0.66rem; color: var(--txt-3); margin-top: 3px; }
+.budget-cell-hero { background: linear-gradient(155deg, var(--ink-900) 0%, var(--ink-700) 100%); border-color: var(--ink-700); }
+.budget-cell-hero .budget-cell-label { color: rgba(255,255,255,0.5); }
+.budget-cell-hero .budget-cell-value { color: var(--amber-bright); }
+.budget-cell-hero .budget-cell-note { color: rgba(255,255,255,0.4); }
+.outflow-block { margin-top: 18px; border-top: 1px solid #eef2f7; padding-top: 16px; }
+.outflow-title { font-family: var(--display); font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--txt-3); margin-bottom: 10px; }
+.outflow-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f4f7fa; }
+.outflow-row:last-child { border-bottom: none; }
+.outflow-key { font-size: 0.78rem; color: var(--txt-2); display: flex; align-items: center; gap: 8px; }
+.outflow-val { font-size: 0.86rem; font-weight: 500; color: var(--txt); font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .budget-grid { grid-template-columns: 1fr; } }
+
+/* YEAR 1 COMPOSITION */
+.y1-total-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.y1-runway-chip { display: inline-flex; align-items: center; gap: 7px; font-family: var(--display); font-size: 0.68rem; font-weight: 600; padding: 7px 13px; border-radius: 999px; }
+.y1-runway-chip.danger { background: rgba(240,67,62,0.12); color: #d4302b; }
+.y1-runway-chip.warn { background: rgba(232,160,32,0.14); color: #b87914; }
+.y1-runway-chip.safe { background: rgba(31,181,115,0.12); color: #0f8a55; }
+.y1-runway-chip.idle { background: #f1f5f9; color: #94a3b8; }
+.dot-static { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.y1-bar { display: flex; height: 30px; border-radius: 8px; overflow: hidden; background: #eef2f7; box-shadow: inset 0 1px 2px rgba(8,15,30,0.06); }
+.y1-seg { height: 100%; transition: width 0.5s cubic-bezier(.2,.8,.2,1); min-width: 0; }
+.y1-seg:not(:last-child) { box-shadow: inset -1px 0 0 rgba(255,255,255,0.5); }
+.y1-legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+.y1-legend-item { display: flex; align-items: flex-start; gap: 9px; }
+.y1-dot { width: 11px; height: 11px; border-radius: 4px; margin-top: 3px; flex-shrink: 0; }
+.y1-legend-key { font-family: var(--display); font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--txt-3); }
+.y1-legend-val { font-size: 0.92rem; font-weight: 500; color: var(--txt); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.y1-formula { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #eef2f7; font-size: 0.74rem; color: var(--txt-2); font-family: var(--body); }
+.y1-formula i { margin-right: 4px; }
+.y1-op { color: var(--txt-3); font-weight: 700; }
+@media (max-width: 640px) { .y1-legend { grid-template-columns: 1fr; } }
+
+/* ORG CHART */
+.org-canvas { position: relative; overflow: auto; background: radial-gradient(ellipse at 30% 40%, rgba(232,160,32,0.05) 0%, transparent 60%), linear-gradient(160deg,#f8fafc 0%,#eef3f8 100%); border-radius: 12px; border: 1px solid #e2e8f0; min-height: 420px; cursor: grab; user-select: none; }
+.org-canvas:active { cursor: grabbing; }
+.org-canvas-inner { position: relative; transform-origin: top left; }
+.org-svg { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
+.org-node { position: absolute; border-radius: 10px; cursor: pointer; transition: box-shadow 0.15s, transform 0.15s; min-width: 140px; max-width: 175px; }
+.org-node:hover { transform: translateY(-2px); }
+.org-node.selected { outline: 2.5px solid var(--amber); outline-offset: 2px; }
+.org-node-inner { padding: 0.65rem 0.9rem; border-radius: 11px; }
+.org-node-level-0 .org-node-inner { background: var(--ink); color: #fff; box-shadow: 0 6px 24px rgba(8,15,30,0.32); }
+.org-node-level-1 .org-node-inner { background: var(--ink-700); color: #e2e8f0; box-shadow: 0 4px 16px rgba(8,15,30,0.22); border: 1px solid rgba(232,160,32,0.22); }
+.org-node-level-2 .org-node-inner { background: #fff; color: #334155; box-shadow: 0 2px 10px rgba(0,0,0,0.07); border: 1px solid #e2e8f0; }
+.org-node-level-3 .org-node-inner { background: #f8fafc; color: #475569; box-shadow: 0 1px 5px rgba(0,0,0,0.05); border: 1px solid #e8ecf0; }
+.org-node-title { font-family: var(--display); font-weight: 600; font-size: 0.78rem; line-height: 1.25; }
+.org-node-subtitle { font-size: 0.65rem; opacity: 0.6; margin-top: 2px; }
+.org-node-dept { display: inline-block; font-family: var(--display); font-size: 0.54rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 5px; padding: 2px 7px; border-radius: 999px; background: rgba(232,160,32,0.18); color: var(--amber-bright); }
+.org-node-level-2 .org-node-dept, .org-node-level-3 .org-node-dept { background: #f0fdfa; color: #0d9488; }
+.org-edit-panel { border-radius: 10px; background: #fff; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+.org-field { width: 100%; border: 1.5px solid #e2e8f0; border-radius: 7px; padding: 6px 9px; font-size: 0.78rem; color: #1e293b; outline: none; font-family: inherit; transition: all 0.12s; }
+.org-field:focus { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(232,160,32,0.13); }
+.org-field-label { font-family: var(--display); font-size: 0.62rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+.org-btn { display: inline-flex; align-items: center; gap: 6px; font-family: var(--display); font-size: 0.72rem; font-weight: 600; padding: 6px 12px; border-radius: 8px; cursor: pointer; transition: all 0.12s; border: none; }
+.org-btn:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.org-btn-amber { background: var(--amber); color: var(--ink); }
+.org-btn-amber:hover { background: var(--amber-bright); }
+.org-btn-slate { background: #f1f5f9; color: #475569; }
+.org-btn-slate:hover { background: #e2e8f0; }
+.org-btn-red { background: #fef2f2; color: #ef4444; }
+.org-btn-red:hover { background: #fee2e2; }
+.org-zoom-bar { position: absolute; bottom: 12px; right: 12px; display: flex; gap: 4px; z-index: 10; }
+.org-zoom-btn { width: 27px; height: 27px; border-radius: 6px; background: #fff; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; color: #475569; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: all 0.1s; }
+.org-zoom-btn:hover { background: #f1f5f9; }
+
+/* PDF */
+body.pdf-export-mode { background: #ffffff !important; }
+body.pdf-export-mode .no-print { display: none !important; }
+body.pdf-export-mode .row-input, body.pdf-export-mode input, body.pdf-export-mode select { border-color: transparent !important; background: transparent !important; box-shadow: none !important; pointer-events: none; }
+body.pdf-export-mode .card { box-shadow: none !important; border: 1px solid #e2e8f0; }
+body.pdf-export-mode .cmd-bar, body.pdf-export-mode .runway-strip { display: none !important; }
+@media print { .no-print { display: none !important; } body { background: #fff !important; } input, select { border-color: transparent !important; background: transparent !important; box-shadow: none !important; } }
+
+.slide-up-enter-active, .slide-up-leave-active { transition: all 0.2s ease; }
+.slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translateY(6px); }
+.empty-state { text-align: center; padding: 32px 16px; color: #b4bfce; font-size: 0.78rem; font-family: var(--display); }
+.empty-state i { font-size: 1.3rem; margin-bottom: 8px; display: block; opacity: 0.45; }
+
+/* RESPONSIVE */
+@media (max-width: 860px) {
+  .cmd-bar-inner { flex-wrap: wrap; padding: 10px 18px; gap: 10px; min-height: 0; }
+  .cmd-brand { border-right: none; padding-right: 0; flex: 1 1 100%; }
+  .cmd-metrics { flex-wrap: wrap; width: 100%; gap: 0; }
+  .cmd-metric { flex: 1 1 30%; border-right: none; padding: 6px 0; }
+  .cmd-actions { width: 100%; padding-left: 0; }
+  .cmd-actions .btn-amber, .cmd-actions .btn-ghost { flex: 1; justify-content: center; }
+  .runway-strip-inner { flex-wrap: wrap; gap: 10px 14px; }
+  .runway-gauge { flex: 1 1 100%; order: 3; }
+  .page-body { padding: 24px 16px 70px; }
+}
+@media (max-width: 560px) {
+  .cmd-metric { flex: 1 1 45%; }
+  .capital-card { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- COMMAND BAR -->
+<header class="cmd-bar no-print">
+  <div class="cmd-bar-inner">
+    <div class="cmd-brand">
+      <div class="cmd-brand-icon">
+        <i class="fa-solid fa-chart-line" style="color:#080F1E;font-size:0.78rem"></i>
+      </div>
+      <div>
+        <div class="cmd-brand-name">Connect IQ</div>
+        <div class="cmd-brand-sub">Monthly Payroll &amp; Org Plan</div>
+      </div>
+    </div>
+    <div class="cmd-metrics">
+      <div class="cmd-metric">
+        <div class="cmd-metric-label">Capital</div>
+        <div class="cmd-metric-value amber">{{ formatCurrency(startingCapital) }}</div>
+      </div>
+      <div class="cmd-metric">
+        <div class="cmd-metric-label">CapEx</div>
+        <div class="cmd-metric-value">{{ formatCurrency(totalCapex) }}</div>
+      </div>
+      <div class="cmd-metric">
+        <div class="cmd-metric-label">Monthly Burn</div>
+        <div class="cmd-metric-value">{{ formatCurrency(effectiveMonthlyBurn) }}</div>
+      </div>
+      <div class="cmd-metric">
+        <div class="cmd-metric-label">Annual Bills</div>
+        <div class="cmd-metric-value">{{ formatCurrency(totalAnnualExpenses) }}</div>
+      </div>
+      <div class="cmd-metric">
+        <div class="cmd-metric-label">Year 1 Total</div>
+        <div class="cmd-metric-value">{{ formatCurrency(totalYearOneCost) }}</div>
+      </div>
+      <div class="cmd-metric" style="flex:1">
+        <div class="cmd-metric-label">Runway</div>
+        <div class="cmd-metric-value" :class="runwayColor">{{ runwayMonths !== null ? runwayMonths.toFixed(1) + ' mo' : '—' }}</div>
+      </div>
+    </div>
+    <div class="cmd-actions">
+      <div style="position:relative">
+        <button @click="showSharePanel=!showSharePanel" class="btn-ghost" :class="{'btn-ghost-active':roomId}">
+          <i class="fa-solid" :class="roomId ? 'fa-link' : 'fa-share-nodes'" style="font-size:0.68rem"></i>
+          <span class="sync-dot-inline" :class="roomId ? (syncStatus==='saved'||syncStatus==='synced' ? 'dot-green' : 'dot-amber') : 'dot-dim'"></span>
+          {{ roomId ? syncLabel : 'Share' }}
+        </button>
+        <!-- Backdrop to close panel on outside click -->
+        <div v-if="showSharePanel" class="share-backdrop" @click="showSharePanel=false"></div>
+        <!-- Share dropdown panel -->
+        <div v-if="showSharePanel" class="share-panel" @click.stop>
+          <div class="share-panel-header">
+            <span style="font-weight:600;font-size:0.82rem">Collaboration</span>
+            <button @click="showSharePanel=false" class="share-close"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+
+          <!-- Not connected state -->
+          <div v-if="!roomId">
+            <!-- File protocol warning -->
+            <div v-if="isFileProtocol" style="margin-bottom:14px">
+              <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:12px 14px;margin-bottom:12px">
+                <div style="font-family:var(--display);font-weight:600;font-size:0.74rem;color:#92400e;margin-bottom:6px"><i class="fa-solid fa-triangle-exclamation" style="margin-right:5px"></i> Real-time sync needs a local server</div>
+                <p style="font-size:0.7rem;color:#78350f;line-height:1.5;margin:0 0 8px">Your browser blocks API calls from <code style="background:#fde68a;padding:1px 5px;border-radius:4px;font-size:0.66rem">file://</code> pages. To use live sync, open a terminal in the folder with this file and run:</p>
+                <code style="display:block;background:#1e293b;color:#fbbf24;font-family:var(--mono);font-size:0.7rem;padding:9px 12px;border-radius:7px;word-break:break-all;line-height:1.5">python -m http.server 8000</code>
+                <p style="font-size:0.66rem;color:#92400e;line-height:1.5;margin:6px 0 0">Then open <a href="http://localhost:8000" style="color:#b45309;text-decoration:underline">http://localhost:8000</a> and use Share from there.</p>
+              </div>
+              <div class="share-divider"><span>or share via copy / paste</span></div>
+              <button @click="exportPlanData" class="share-btn-primary" style="margin-bottom:8px"><i class="fa-solid fa-arrow-up-from-bracket"></i> Export Plan Data</button>
+              <div v-if="showExport" style="margin-bottom:10px">
+                <label class="share-field-label">Copy this code and send to coworker</label>
+                <div class="share-copy-row">
+                  <code class="share-code share-code-sm" style="max-height:60px;overflow-y:auto;font-size:0.58rem">{{ exportCode.slice(0,120) }}…</code>
+                  <button @click="copyExportCode" class="share-btn-copy"><i class="fa-solid" :class="_codeFlash ? 'fa-check' : 'fa-copy'"></i></button>
+                </div>
+              </div>
+              <div class="share-divider"><span>import from coworker</span></div>
+              <div class="share-join-row">
+                <input v-model="importCode" type="text" placeholder="Paste plan code…" class="share-input" @keyup.enter="importPlanData()" />
+                <button @click="importPlanData()" class="share-btn-join" :disabled="!importCode.trim()">Import</button>
+              </div>
+              <div v-if="importError" class="share-error" style="margin-top:8px"><i class="fa-solid fa-triangle-exclamation"></i> {{ importError }}</div>
+            </div>
+            <!-- Normal HTTP mode — real-time sync available -->
+            <div v-else>
+              <p class="share-desc">Create a shared room so anyone with the code can view and edit this plan in real time.</p>
+              <button @click="createRoom" class="share-btn-primary"><i class="fa-solid fa-plus"></i> Create Room</button>
+              <div class="share-divider"><span>or join an existing room</span></div>
+              <div class="share-join-row">
+                <input v-model="joinCode" type="text" placeholder="Paste room code…" class="share-input" @keyup.enter="joinRoom()" />
+                <button @click="joinRoom()" class="share-btn-join" :disabled="!joinCode.trim()">Join</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Connected state -->
+          <div v-else>
+            <div class="share-connected-badge">
+              <span class="dot-static" style="background:var(--safe)"></span>
+              <span>Room connected</span>
+            </div>
+            <p class="share-desc" style="margin-top:8px">Share this code or link with your collaborator. They open the HTML file in their browser and join with the code — no Claude chat needed.</p>
+
+            <div class="share-field-group">
+              <label class="share-field-label">Room Code</label>
+              <div class="share-copy-row">
+                <code class="share-code">{{ roomId }}</code>
+                <button @click="copyRoomCode" class="share-btn-copy">
+                  <i class="fa-solid" :class="_codeFlash ? 'fa-check' : 'fa-copy'"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="share-field-group" v-if="shareLink">
+              <label class="share-field-label">Direct Link</label>
+              <div class="share-copy-row">
+                <code class="share-code share-code-sm">{{ shareLink }}</code>
+                <button @click="copyShareLink" class="share-btn-copy">
+                  <i class="fa-solid" :class="_copyFlash ? 'fa-check' : 'fa-copy'"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="share-status">
+              <span class="sync-dot-inline" :class="syncStatus==='saved'||syncStatus==='synced' ? 'dot-green' : syncStatus==='pending' ? 'dot-amber' : 'dot-dim'"></span>
+              {{ syncLabel }} — polls every 3s
+            </div>
+
+            <button @click="disconnectRoom" class="share-btn-disconnect"><i class="fa-solid fa-link-slash"></i> Disconnect</button>
+          </div>
+
+          <div v-if="roomError" class="share-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ roomError }}</div>
+        </div>
+      </div>
+      <button @click="resetPlan" class="btn-ghost" title="Reset to defaults">
+        <i class="fa-solid fa-rotate-left" style="font-size:0.68rem"></i> Reset
+      </button>
+      <button @click="generatePdf('preview')" :disabled="isExporting" class="btn-ghost">
+        <i class="fa-solid fa-eye" style="font-size:0.68rem"></i> Preview
+      </button>
+      <button @click="generatePdf('download')" :disabled="isExporting" class="btn-amber">
+        <i class="fa-solid" :class="isExporting ? 'fa-spinner fa-spin' : 'fa-file-arrow-down'" style="font-size:0.68rem"></i>
+        {{ isExporting ? 'Generating…' : 'Export PDF' }}
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- RUNWAY GAUGE -->
+<div class="runway-strip no-print">
+  <div class="runway-strip-inner">
+    <div class="runway-label">Runway</div>
+    <div class="runway-gauge">
+      <div class="runway-bar-track">
+        <div class="runway-bar-fill" :style="runwayBarStyle"></div>
+      </div>
+      <div class="runway-ticks">
+        <span class="runway-tick">0</span>
+        <span class="runway-tick">6</span>
+        <span class="runway-tick">12</span>
+        <span class="runway-tick">24</span>
+        <span class="runway-tick">36 mo</span>
+      </div>
+    </div>
+    <div class="runway-readout">
+      <span class="runway-months tnum" :style="{ color: runwayBarColor }">{{ runwayMonths !== null ? runwayMonths.toFixed(1) : '—' }}</span>
+      <span class="runway-months-unit" v-if="runwayMonths !== null">months</span>
+    </div>
+    <div class="runway-badge" :class="runwayBadgeClass">
+      <span class="dot"></span>{{ runwayNote }}
+    </div>
+  </div>
+</div>
+
+<!-- REPORT CONTENT -->
+<div ref="reportContent">
+  <div class="page-body">
+
+    <!-- Capital -->
+    <div class="card capital-card" style="margin-bottom:0">
+      <div>
+        <div style="font-family:var(--display);font-size:0.92rem;font-weight:600;color:#1e293b">Starting capital</div>
+        <div style="font-size:0.72rem;color:#94a3b8;margin-top:3px">Funding on hand — measured against monthly burn to compute runway</div>
+      </div>
+      <div class="capital-input-wrap">
+        <span>E£</span>
+        <input type="number" v-model.number="startingCapital" class="capital-input" />
+      </div>
+    </div>
+
+    <!-- CapEx -->
+    <div class="section-gap">
+      <div class="section-eyebrow">
+        <div class="section-icon amber"><i class="fa-solid fa-building-columns"></i></div>
+        <div>
+          <div class="section-title">Capital Expenditures</div>
+          <div class="section-sub">One-time setup costs</div>
+        </div>
+        <div style="flex:1"></div>
+        <button @click="addCapexItem" class="add-row-btn no-print">
+          <i class="fa-solid fa-plus" style="font-size:0.58rem"></i> Add Line
+        </button>
+      </div>
+      <div class="card" style="padding:22px 26px">
+        <p style="font-size:0.7rem;color:var(--txt-3);line-height:1.5;margin:0 0 12px;font-style:italic">
+          Pre-filled with sample EGP estimates for an 8-person team — replace each amount with your own supplier quotes.
+        </p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:42%">Expense</th>
+              <th style="width:30%">Category</th>
+              <th class="r" style="width:22%">Amount</th>
+              <th class="no-print" style="width:6%"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in capexItems" :key="item.id">
+              <td><input v-model="item.name" type="text" placeholder="Expense name" class="row-input" /></td>
+              <td><input v-model="item.category" type="text" list="capex-cats" placeholder="Category" class="row-input" /></td>
+              <td>
+                <div style="display:flex;align-items:center;justify-content:flex-end;gap:3px">
+                  <span style="font-size:0.72rem;color:#94a3b8;font-family:'DM Mono',monospace">E£</span>
+                  <input v-model.number="item.amount" type="number" placeholder="0" class="row-input mono" style="text-align:right;width:100px" />
+                </div>
+              </td>
+              <td class="no-print" style="text-align:right">
+                <button @click="removeCapexItem(item.id)" class="delete-btn"><i class="fa-solid fa-xmark" style="font-size:0.62rem"></i></button>
+              </td>
+            </tr>
+            <tr v-if="capexItems.length === 0">
+              <td colspan="4"><div class="empty-state"><i class="fa-solid fa-plus-circle"></i>No CapEx items yet</div></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" class="total-label">Total CapEx</td>
+              <td class="total-value">{{ formatCurrency(totalCapex) }}</td>
+              <td class="no-print"></td>
+            </tr>
+          </tfoot>
+        </table>
+        <datalist id="capex-cats">
+          <option value="IT Equipment"></option><option value="Telecom"></option><option value="Furniture"></option>
+          <option value="Software"></option><option value="Office Setup"></option>
+          <option value="Legal & Admin"></option><option value="Inventory"></option><option value="Other"></option>
+        </datalist>
+      </div>
+    </div>
+
+    <!-- OpEx -->
+    <div class="section-gap">
+      <div class="section-eyebrow">
+        <div class="section-icon blue"><i class="fa-solid fa-rotate"></i></div>
+        <div>
+          <div class="section-title">Operating Expenses</div>
+          <div class="section-sub">Monthly recurring costs</div>
+        </div>
+        <div style="flex:1"></div>
+        <button @click="addOpexItem" class="add-row-btn no-print">
+          <i class="fa-solid fa-plus" style="font-size:0.58rem"></i> Add Line
+        </button>
+      </div>
+      <div class="card" style="padding:22px 26px">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:42%">Expense</th>
+              <th style="width:30%">Category</th>
+              <th class="r" style="width:22%">Amount / mo</th>
+              <th class="no-print" style="width:6%"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in opexItems" :key="item.id">
+              <td><input v-model="item.name" type="text" placeholder="Expense name" class="row-input" /></td>
+              <td><input v-model="item.category" type="text" list="opex-cats" placeholder="Category" class="row-input" /></td>
+              <td>
+                <div style="display:flex;align-items:center;justify-content:flex-end;gap:3px">
+                  <span style="font-size:0.72rem;color:#94a3b8;font-family:'DM Mono',monospace">E£</span>
+                  <input v-model.number="item.amount" type="number" placeholder="0" class="row-input mono" style="text-align:right;width:100px" />
+                </div>
+              </td>
+              <td class="no-print" style="text-align:right">
+                <button @click="removeOpexItem(item.id)" class="delete-btn"><i class="fa-solid fa-xmark" style="font-size:0.62rem"></i></button>
+              </td>
+            </tr>
+            <tr v-if="opexItems.length === 0">
+              <td colspan="4"><div class="empty-state"><i class="fa-solid fa-plus-circle"></i>No OpEx items yet</div></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" class="total-label">Total / month</td>
+              <td class="total-value">{{ formatCurrency(totalMonthlyOpex) }}</td>
+              <td class="no-print"></td>
+            </tr>
+            <tr>
+              <td colspan="2" style="font-size:0.7rem;color:#94a3b8;padding:3px 8px 8px">Annualized</td>
+              <td class="sub-value" style="padding:3px 8px 8px">{{ formatCurrency(totalAnnualOpex) }}</td>
+              <td class="no-print"></td>
+            </tr>
+          </tfoot>
+        </table>
+        <datalist id="opex-cats">
+          <option value="Payroll"></option><option value="Facilities"></option>
+          <option value="Software"></option><option value="Marketing"></option>
+          <option value="Telecom"></option><option value="Admin"></option><option value="Utilities"></option><option value="Other"></option>
+        </datalist>
+      </div>
+    </div>
+
+    <!-- Annual Expenses -->
+    <div class="section-gap">
+      <div class="section-eyebrow">
+        <div class="section-icon purple"><i class="fa-solid fa-calendar-check"></i></div>
+        <div>
+          <div class="section-title">Annual Expenses</div>
+          <div class="section-sub">Paid once a year — rent, software licenses, insurance, renewals</div>
+        </div>
+        <div style="flex:1"></div>
+        <button @click="addAnnualItem" class="add-row-btn no-print">
+          <i class="fa-solid fa-plus" style="font-size:0.58rem"></i> Add Line
+        </button>
+      </div>
+      <div class="card" style="padding:22px 26px">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:42%">Expense</th>
+              <th style="width:30%">Category</th>
+              <th class="r" style="width:22%">Amount / yr</th>
+              <th class="no-print" style="width:6%"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in annualItems" :key="item.id">
+              <td><input v-model="item.name" type="text" placeholder="Expense name" class="row-input" /></td>
+              <td><input v-model="item.category" type="text" list="annual-cats" placeholder="Category" class="row-input" /></td>
+              <td>
+                <div style="display:flex;align-items:center;justify-content:flex-end;gap:3px">
+                  <span style="font-size:0.72rem;color:#94a3b8;font-family:'DM Mono',monospace">E£</span>
+                  <input v-model.number="item.amount" type="number" placeholder="0" class="row-input mono" style="text-align:right;width:100px" />
+                </div>
+              </td>
+              <td class="no-print" style="text-align:right">
+                <button @click="removeAnnualItem(item.id)" class="delete-btn"><i class="fa-solid fa-xmark" style="font-size:0.62rem"></i></button>
+              </td>
+            </tr>
+            <tr v-if="annualItems.length === 0">
+              <td colspan="4"><div class="empty-state"><i class="fa-solid fa-plus-circle"></i>No annual expenses yet</div></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" class="total-label">Total / year</td>
+              <td class="total-value">{{ formatCurrency(totalAnnualExpenses) }}</td>
+              <td class="no-print"></td>
+            </tr>
+            <tr>
+              <td colspan="2" style="font-size:0.7rem;color:#94a3b8;padding:3px 8px 8px">Amortized to monthly burn</td>
+              <td class="sub-value" style="padding:3px 8px 8px">{{ formatCurrency(monthlyAnnualPortion) }} / mo</td>
+              <td class="no-print"></td>
+            </tr>
+          </tfoot>
+        </table>
+        <datalist id="annual-cats">
+          <option value="Facilities"></option><option value="Software License"></option>
+          <option value="Insurance"></option><option value="Professional"></option>
+          <option value="Admin"></option><option value="Marketing"></option><option value="Other"></option>
+        </datalist>
+      </div>
+    </div>
+
+    <!-- Year One Composition -->
+    <div class="section-gap">
+      <div class="section-eyebrow">
+        <div class="section-icon amber"><i class="fa-solid fa-chart-pie"></i></div>
+        <div>
+          <div class="section-title">Year 1 Capital Plan</div>
+          <div class="section-sub">Where the first year's money goes — one-time + 12 months recurring + annual bills</div>
+        </div>
+      </div>
+      <div class="card" style="padding:22px 26px">
+        <div class="y1-total-row">
+          <div>
+            <div class="budget-cell-label">Total Year 1 Outlay</div>
+            <div style="font-family:var(--mono);font-size:1.9rem;font-weight:500;color:var(--ink);margin-top:4px;font-variant-numeric:tabular-nums">{{ formatCurrency(totalYearOneCost) }}</div>
+          </div>
+          <div class="y1-runway-chip" :class="runwayBadgeClass" v-if="runwayMonths !== null">
+            <span class="dot-static" :style="{background: runwayBarColor}"></span>
+            {{ runwayMonths.toFixed(1) }} mo runway · {{ runwayNote }}
+          </div>
+        </div>
+
+        <div class="y1-bar">
+          <div v-for="seg in yearOneSegments" :key="seg.key" class="y1-seg"
+               :style="{ width: seg.pct + '%', background: seg.color }"
+               :title="seg.key + ': ' + formatCurrency(seg.value)"></div>
+        </div>
+
+        <div class="y1-legend">
+          <div v-for="seg in yearOneSegments" :key="seg.key" class="y1-legend-item">
+            <span class="y1-dot" :style="{ background: seg.color }"></span>
+            <div>
+              <div class="y1-legend-key">{{ seg.key }}</div>
+              <div class="y1-legend-val mono">{{ formatCurrency(seg.value) }} <span style="color:var(--txt-3)">· {{ seg.pct.toFixed(0) }}%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="y1-formula no-print">
+          <span><i class="fa-solid fa-building-columns" style="color:var(--amber)"></i> CapEx {{ formatCurrency(totalCapex) }}</span>
+          <span class="y1-op">+</span>
+          <span><i class="fa-solid fa-rotate" style="color:#3b82f6"></i> Monthly {{ formatCurrency(totalMonthlyOpex) }} × 12</span>
+          <span class="y1-op">+</span>
+          <span><i class="fa-solid fa-calendar-check" style="color:#8b5cf6"></i> Annual {{ formatCurrency(totalAnnualExpenses) }}</span>
+          <span class="y1-op">=</span>
+          <span style="font-weight:700;color:var(--ink)">{{ formatCurrency(totalYearOneCost) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payroll Net-to-Gross Detail -->
+    <div class="section-gap">
+      <div class="section-eyebrow">
+        <div class="section-icon blue"><i class="fa-solid fa-receipt"></i></div>
+        <div>
+          <div class="section-title">Payroll Detail — Net to Gross</div>
+          <div class="section-sub">How each Net salary grosses up to full employer cost</div>
+        </div>
+      </div>
+      <div class="card" style="padding:22px 26px">
+        <p style="font-size:0.74rem;color:var(--txt-2);line-height:1.5;margin:0 0 14px">
+          To pay each employee the exact <b>Net</b> they were promised, the company grosses up the base
+          salary to absorb the employee's statutory deductions — <b>11% social insurance</b> (on wages up
+          to the 16,700&nbsp;EGP cap) plus Egypt's progressive income-tax brackets. On top of the gross,
+          the employer pays its own <b>18.75% social-insurance share</b>. The final column is the true
+          monthly cost per role, which is what feeds the Operating Expenses above.
+        </p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:24%">Position</th>
+              <th class="r">Staff</th>
+              <th class="r">Net (EGP)</th>
+              <th class="r">Gross Base</th>
+              <th class="r">Tax + Ins. Absorbed</th>
+              <th class="r">Employer Ins. (18.75%)</th>
+              <th class="r">Total Cost / Employee</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in payrollDetail" :key="row.role">
+              <td>{{ row.role }}</td>
+              <td class="r mono">{{ row.count }}</td>
+              <td class="r mono">{{ formatNum(row.net) }}</td>
+              <td class="r mono">{{ formatNum(row.gross) }}</td>
+              <td class="r mono">{{ formatNum(row.absorbed) }}</td>
+              <td class="r mono">{{ formatNum(row.employerIns) }}</td>
+              <td class="r mono" style="font-weight:600;color:var(--txt)">{{ formatNum(row.totalCost) }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td class="total-label">Totals</td>
+              <td class="r total-value">{{ payrollHeadcount }}</td>
+              <td class="r total-value">{{ formatNum(payrollTotalNet) }}</td>
+              <td class="r total-value">{{ formatNum(payrollTotalGross) }}</td>
+              <td class="r total-value">{{ formatNum(payrollTotalGross - payrollTotalNet) }}</td>
+              <td class="r total-value">{{ formatNum(payrollTotalEmployerIns) }}</td>
+              <td class="r total-value">{{ formatNum(payrollTotalOutlay) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Budget Summary -->
+    <div class="section-gap">
+      <div class="section-eyebrow">
+        <div class="section-icon amber"><i class="fa-solid fa-sack-dollar"></i></div>
+        <div>
+          <div class="section-title">Monthly Budget Summary</div>
+          <div class="section-sub">{{ payrollHeadcount }} employees · full corporate outlay</div>
+        </div>
+      </div>
+      <div class="card" style="padding:22px 26px">
+        <div class="budget-grid">
+          <div class="budget-cell">
+            <div class="budget-cell-label">Total Net Paid to Employees</div>
+            <div class="budget-cell-value">{{ formatCurrency(payrollTotalNet) }}</div>
+            <div class="budget-cell-note">Actual bank transfer to staff</div>
+          </div>
+          <div class="budget-cell">
+            <div class="budget-cell-label">Total Gross Payroll Base</div>
+            <div class="budget-cell-value">{{ formatCurrency(payrollTotalGross) }}</div>
+            <div class="budget-cell-note">After grossing up for tax + employee insurance</div>
+          </div>
+          <div class="budget-cell">
+            <div class="budget-cell-label">Employer Social Insurance</div>
+            <div class="budget-cell-value">{{ formatCurrency(payrollTotalEmployerIns) }}</div>
+            <div class="budget-cell-note">18.75% employer share</div>
+          </div>
+          <div class="budget-cell budget-cell-hero">
+            <div class="budget-cell-label">Total Corporate Monthly Outlay</div>
+            <div class="budget-cell-value">{{ formatCurrency(payrollTotalOutlay) }}</div>
+            <div class="budget-cell-note">Gross base + employer insurance</div>
+          </div>
+        </div>
+
+        <div class="outflow-block">
+          <div class="outflow-title">Monthly Cash Outflow — Where the Money Goes</div>
+          <div class="outflow-row">
+            <span class="outflow-key"><i class="fa-solid fa-users" style="color:var(--safe)"></i> To Employees (net bank transfer)</span>
+            <span class="outflow-val mono">{{ formatCurrency(cashOutflow.toEmployees) }}</span>
+          </div>
+          <div class="outflow-row">
+            <span class="outflow-key"><i class="fa-solid fa-landmark" style="color:var(--danger)"></i> To Egyptian Tax Authority (withholding tax)</span>
+            <span class="outflow-val mono">{{ formatCurrency(cashOutflow.toTaxAuthority) }}</span>
+          </div>
+          <div class="outflow-row">
+            <span class="outflow-key"><i class="fa-solid fa-shield-halved" style="color:var(--amber)"></i> To Social Insurance Authority (combined shares)</span>
+            <span class="outflow-val mono">{{ formatCurrency(cashOutflow.toSocialIns) }}</span>
+          </div>
+        </div>
+
+        <p style="font-size:0.66rem;color:var(--txt-3);line-height:1.5;margin:14px 0 0;font-style:italic">
+          Note: derived from the per-employee breakdown above. The source document listed employer
+          insurance as 24,181 EGP and outlay as 223,913 EGP; the figures here (23,181 / 222,913) are the
+          arithmetically correct sums of its own rows. The cash-outflow split is reproduced from the
+          document as-is and uses a broader combined-insurance basis, so it will not tie exactly to the
+          line above.
+        </p>
+      </div>
+    </div>
+
+    <!-- Org Chart -->
+    <div class="section-gap">
+      <div class="section-eyebrow">
+        <div class="section-icon purple"><i class="fa-solid fa-sitemap"></i></div>
+        <div>
+          <div class="section-title">Organization Structure</div>
+          <div class="section-sub">Click node to edit · Drag to reposition · Scroll to zoom</div>
+        </div>
+        <div style="flex:1"></div>
+        <div class="no-print" style="display:flex;gap:6px">
+          <button @click="addOrgNode" class="org-btn org-btn-amber"><i class="fa-solid fa-circle-plus"></i> Add Node</button>
+          <button @click="autoLayout" class="org-btn org-btn-slate"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto Layout</button>
+        </div>
+      </div>
+      <div class="card" style="padding:22px 26px">
+        <div class="no-print" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px">
+          <span style="display:flex;align-items:center;gap:5px;font-size:0.62rem;color:#64748b"><span style="width:7px;height:7px;border-radius:50%;background:#080F1E;display:inline-block"></span>Executive</span>
+          <span style="display:flex;align-items:center;gap:5px;font-size:0.62rem;color:#64748b"><span style="width:7px;height:7px;border-radius:50%;background:#18253c;display:inline-block"></span>Director</span>
+          <span style="display:flex;align-items:center;gap:5px;font-size:0.62rem;color:#64748b"><span style="width:7px;height:7px;border-radius:50%;background:#cbd5e1;display:inline-block"></span>Manager</span>
+          <span style="display:flex;align-items:center;gap:5px;font-size:0.62rem;color:#64748b"><span style="width:7px;height:7px;border-radius:50%;background:#e2e8f0;display:inline-block"></span>Individual</span>
+        </div>
+        <div class="org-canvas" style="height:480px"
+          @mousedown="onCanvasMouseDown"
+          @mousemove="onCanvasMouseMove"
+          @mouseup="onCanvasMouseUp"
+          @mouseleave="onCanvasMouseUp"
+          @wheel.prevent="onCanvasWheel"
+          ref="orgCanvas">
+          <div class="org-canvas-inner" :style="canvasInnerStyle" ref="orgInner">
+            <svg class="org-svg" :width="svgSize.w" :height="svgSize.h">
+              <defs>
+                <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L6,3 z" fill="#cbd5e1"/>
+                </marker>
+              </defs>
+              <path v-for="edge in orgEdges" :key="edge.id" :d="edge.path" fill="none" stroke="#d1d9e0" stroke-width="1.5" marker-end="url(#arrow)" style="pointer-events:none"/>
+            </svg>
+            <div v-for="node in orgNodes" :key="node.id"
+              class="org-node"
+              :class="['org-node-level-' + Math.min(node.level,3), selectedOrgNode && selectedOrgNode.id === node.id ? 'selected' : '']"
+              :style="{ left: node.x + 'px', top: node.y + 'px', width: '160px' }"
+              @mousedown.stop="onNodeMouseDown($event, node)"
+              @click.stop="selectOrgNode(node)">
+              <div class="org-node-inner">
+                <div class="org-node-title">{{ node.title }}</div>
+                <div v-if="node.name" class="org-node-subtitle">{{ node.name }}</div>
+                <div v-if="node.dept" class="org-node-dept">{{ node.dept }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="org-zoom-bar no-print">
+            <button class="org-zoom-btn" @click.stop="zoom(0.15)"><i class="fa-solid fa-plus"></i></button>
+            <button class="org-zoom-btn" @click.stop="zoom(-0.15)"><i class="fa-solid fa-minus"></i></button>
+            <button class="org-zoom-btn" @click.stop="resetZoom"><i class="fa-solid fa-compress"></i></button>
+          </div>
+        </div>
+        <transition name="slide-up">
+        <div v-if="selectedOrgNode" class="org-edit-panel mt-3 p-4 no-print">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <p style="font-size:0.76rem;font-weight:700;color:#334155;display:flex;align-items:center;gap:5px">
+              <i class="fa-solid fa-pen-to-square" style="color:var(--amber)"></i> Edit Node
+            </p>
+            <div style="display:flex;gap:5px">
+              <button @click="addChildNode" class="org-btn org-btn-amber"><i class="fa-solid fa-code-branch"></i> Add Child</button>
+              <button @click="removeOrgNode" class="org-btn org-btn-red" :disabled="selectedOrgNode.level===0"><i class="fa-solid fa-trash-can"></i> Remove</button>
+              <button @click="selectedOrgNode=null" class="org-btn org-btn-slate"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div><p class="org-field-label">Job Title *</p><input class="org-field" v-model="selectedOrgNode.title" placeholder="e.g. CEO" /></div>
+            <div><p class="org-field-label">Person's Name</p><input class="org-field" v-model="selectedOrgNode.name" placeholder="e.g. Alex Johnson" /></div>
+            <div><p class="org-field-label">Department</p><input class="org-field" v-model="selectedOrgNode.dept" placeholder="e.g. Engineering" /></div>
+          </div>
+          <div style="margin-top:10px">
+            <p class="org-field-label" style="margin-bottom:5px">Reports to</p>
+            <select class="org-field" v-model="selectedOrgNode.parentId" @change="onParentChange">
+              <option :value="null">— None (Root) —</option>
+              <option v-for="n in orgNodes.filter(n=>n.id!==selectedOrgNode.id)" :key="n.id" :value="n.id">
+                {{ n.title }}{{ n.name ? ' (' + n.name + ')' : '' }}
+              </option>
+            </select>
+          </div>
+        </div>
+        </transition>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /reportContent -->
+
+<div class="no-print" style="text-align:center;padding:18px;font-family:var(--display);font-size:0.64rem;color:#aab4c2;letter-spacing:0.01em">
+  Click <b>Share</b> to create a room · Collaborators join with the code · Changes sync every 3s · {{ reportDate }}
+</div>
+
+</div><!-- /app -->
+
+<script>
+const { createApp } = Vue;
+const NODE_W=160, NODE_H=72, H_GAP=40, V_GAP=60;
+
+function buildTree(nodes) {
+  const map={};
+  nodes.forEach(n=>map[n.id]={...n,children:[]});
+  const roots=[];
+  nodes.forEach(n=>{
+    if(n.parentId&&map[n.parentId]) map[n.parentId].children.push(map[n.id]);
+    else roots.push(map[n.id]);
+  });
+  return {map,roots};
+}
+function computeLevels(roots,map) {
+  function walk(node,level){map[node.id].level=level;node.children.forEach(c=>walk(c,level+1));}
+  roots.forEach(r=>walk(r,0));
+}
+function layoutTree(roots) {
+  function walkSize(node){
+    if(!node.children.length){node._w=NODE_W;return;}
+    node.children.forEach(c=>walkSize(c));
+    node._w=Math.max(NODE_W,node.children.reduce((s,c)=>s+c._w+H_GAP,-H_GAP));
+  }
+  function place(node,x,y){
+    if(!node.children.length){node.x=x;node.y=y;return;}
+    let cx=x;
+    node.children.forEach(c=>{place(c,cx,y+NODE_H+V_GAP);cx+=c._w+H_GAP;});
+    const first=node.children[0],last=node.children[node.children.length-1];
+    node.x=(first.x+last.x)/2;node.y=y;
+  }
+  let startX=30;
+  roots.forEach(r=>{walkSize(r);place(r,startX,30);startX+=r._w+H_GAP*2;});
+}
+
+createApp({
+  data(){return{
+    startingCapital:0,nextCapexId:7,nextOpexId:12,nextAnnualId:9,isExporting:false,
+    syncStatus:'idle', // idle | pending | saved | synced | local | error
+    _saveTimer:null,_lastSaveTs:0,_skipWatch:false,_pollInterval:null,
+    // Collaboration room
+    roomId:null,showSharePanel:false,joinCode:'',shareLink:'',roomError:'',
+    _copyFlash:false,_codeFlash:false,
+    importCode:'',importError:'',exportCode:'',showExport:false,showImport:false,
+    // One-time capital purchases. Sample EGP estimates for an 8-person
+    // network/VoIP integrator — edit each line to your own quotes.
+    capexItems:[
+      {id:1,name:'Laptops & workstations (×8)',category:'IT Equipment',amount:224000},
+      {id:2,name:'SIM cards & activation (×8)',category:'Telecom',amount:4800},
+      {id:3,name:'Networking & server lab equipment',category:'IT Equipment',amount:120000},
+      {id:4,name:'Office furniture — desks & chairs',category:'Furniture',amount:90000},
+      {id:5,name:'Meeting room & reception fit-out',category:'Furniture',amount:55000},
+      {id:6,name:'VoIP test handsets & peripherals',category:'IT Equipment',amount:45000}
+    ],
+    // Costs paid once a year. Amortized into monthly burn (÷12) for runway.
+    annualItems:[
+      {id:1,name:'Office rent (annual)',category:'Facilities',amount:360000},
+      {id:2,name:'Microsoft 365 / Google Workspace',category:'Software License',amount:42000},
+      {id:3,name:'Accounting & ERP software license',category:'Software License',amount:36000},
+      {id:4,name:'VoIP platform / PBX licenses',category:'Software License',amount:60000},
+      {id:5,name:'Business & equipment insurance',category:'Insurance',amount:48000},
+      {id:6,name:'Accounting, audit & legal retainer',category:'Professional',amount:60000},
+      {id:7,name:'Commercial registration & permit renewals',category:'Admin',amount:18000},
+      {id:8,name:'Domain, hosting & security tools',category:'Software License',amount:24000}
+    ],
+    opexItems:[
+      {id:1,name:'Network Engineer',category:'Payroll',amount:54451},
+      {id:2,name:'VoIP Engineer',category:'Payroll',amount:40261},
+      {id:3,name:'Sales Account Manager (×2)',category:'Payroll',amount:54552},
+      {id:4,name:'Project Manager',category:'Payroll',amount:23541},
+      {id:5,name:'Lead Generation Specialist',category:'Payroll',amount:21051},
+      {id:6,name:'Accountant',category:'Payroll',amount:21051},
+      {id:7,name:'Office Boy',category:'Payroll',amount:8006},
+      {id:8,name:'Internet & connectivity',category:'Utilities',amount:6000},
+      {id:9,name:'Electricity & utilities',category:'Utilities',amount:4500},
+      {id:10,name:'Cleaning & office consumables',category:'Facilities',amount:2500},
+      {id:11,name:'Mobile plans (×8)',category:'Telecom',amount:4000}
+    ],
+    // Net-to-gross breakdown from the Connect IQ payroll doc.
+    // Each employee's target NET is grossed up to cover 11% employee social
+    // insurance (capped at 16,700 EGP wage) plus progressive income tax.
+    // employerIns = 18.75% employer social insurance share.
+    // totalCost = grossBase + employerIns  (full monthly cost to the company).
+    payrollDetail:[
+      {role:'Network Engineer',     count:1, net:40000, gross:51320, absorbed:11320, employerIns:3131, totalCost:54451},
+      {role:'VoIP Engineer',        count:1, net:30000, gross:37130, absorbed:7130,  employerIns:3131, totalCost:40261},
+      {role:'Sales Account Manager',count:2, net:20000, gross:24145, absorbed:4145,  employerIns:3131, totalCost:27276},
+      {role:'Project Manager',      count:1, net:17000, gross:20410, absorbed:3410,  employerIns:3131, totalCost:23541},
+      {role:'Lead Generation',      count:1, net:15000, gross:17920, absorbed:2920,  employerIns:3131, totalCost:21051},
+      {role:'Accountant',           count:1, net:15000, gross:17920, absorbed:2920,  employerIns:3131, totalCost:21051},
+      {role:'Office Boy',           count:1, net:6000,  gross:6742,  absorbed:742,   employerIns:1264, totalCost:8006}
+    ],
+    // Cash-outflow split from the doc (who receives the money each month).
+    cashOutflow:{
+      toEmployees:163000,   // net bank transfer
+      toTaxAuthority:25487, // withholding income tax
+      toSocialIns:35426     // combined employee + employer insurance shares
+    },
+    nextOrgId:10,selectedOrgNode:null,
+    orgNodes:[
+      {id:1,parentId:null,title:'Managing Director',name:'',dept:'Executive',x:520,y:30,level:0},
+      {id:2,parentId:1,title:'Sales Director',name:'',dept:'Sales',x:200,y:180,level:1},
+      {id:3,parentId:2,title:'Lead Gen Specialist',name:'Net: 15,000 EGP',dept:'Sales',x:40,y:330,level:2},
+      {id:4,parentId:2,title:'Sales A/M (×2)',name:'Net: 20,000 EGP',dept:'Sales',x:220,y:330,level:2},
+      {id:5,parentId:2,title:'Project Manager',name:'Net: 17,000 EGP',dept:'Sales',x:400,y:330,level:2},
+      {id:6,parentId:1,title:'Network Engineer',name:'Net: 40,000 EGP',dept:'Engineering',x:620,y:180,level:1},
+      {id:7,parentId:1,title:'VoIP Engineer',name:'Net: 30,000 EGP',dept:'Engineering',x:800,y:180,level:1},
+      {id:8,parentId:1,title:'Accountant',name:'Net: 15,000 EGP',dept:'Finance',x:980,y:180,level:1},
+      {id:9,parentId:1,title:'Office Boy',name:'Net: 6,000 EGP',dept:'Support',x:1160,y:180,level:1}
+    ],
+    canvasScale:1,canvasX:0,canvasY:0,
+    isPanning:false,panStart:null,draggingNode:null,dragOffset:null,
+    svgSize:{w:900,h:500}
+  };},
+  computed:{
+    // --- Payroll budget summary, derived from per-employee rows ---
+    // (Single source of truth = payrollDetail. The source doc's summary
+    //  totals were 1,000 EGP overstated due to a transcription slip;
+    //  these recompute cleanly so the numbers always tie out.)
+    payrollHeadcount(){return this.payrollDetail.reduce((s,r)=>s+r.count,0);},
+    payrollTotalNet(){return this.payrollDetail.reduce((s,r)=>s+r.count*r.net,0);},
+    payrollTotalGross(){return this.payrollDetail.reduce((s,r)=>s+r.count*r.gross,0);},
+    payrollTotalEmployerIns(){return this.payrollDetail.reduce((s,r)=>s+r.count*r.employerIns,0);},
+    payrollTotalOutlay(){return this.payrollTotalGross+this.payrollTotalEmployerIns;},
+    totalCapex(){return this.capexItems.reduce((s,i)=>s+(Number(i.amount)||0),0);},
+    totalMonthlyOpex(){return this.opexItems.reduce((s,i)=>s+(Number(i.amount)||0),0);},
+    totalAnnualOpex(){return this.totalMonthlyOpex*12;},
+    totalAnnualExpenses(){return this.annualItems.reduce((s,i)=>s+(Number(i.amount)||0),0);},
+    monthlyAnnualPortion(){return this.totalAnnualExpenses/12;},
+    // True cash burn each month = recurring monthly + 1/12 of yearly bills.
+    effectiveMonthlyBurn(){return this.totalMonthlyOpex+this.monthlyAnnualPortion;},
+    totalYearOneCost(){return this.totalCapex+this.totalAnnualOpex+this.totalAnnualExpenses;},
+    // Year-1 spend composition for the stacked bar.
+    yearOneSegments(){
+      const cap=this.totalCapex, op=this.totalAnnualOpex, an=this.totalAnnualExpenses;
+      const total=cap+op+an||1;
+      return [
+        {key:'Operating (×12)',value:op,color:'#3b82f6',pct:op/total*100},
+        {key:'Annual bills',value:an,color:'#8b5cf6',pct:an/total*100},
+        {key:'One-time CapEx',value:cap,color:'#E8A020',pct:cap/total*100}
+      ];
+    },
+    runwayMonths(){if(this.effectiveMonthlyBurn<=0)return null;return this.startingCapital/this.effectiveMonthlyBurn;},
+    runwayColor(){if(!this.runwayMonths)return'';if(this.runwayMonths<6)return'danger';if(this.runwayMonths<12)return'amber';return'safe';},
+    runwayBarColor(){if(!this.runwayMonths)return'#94a3b8';if(this.runwayMonths<6)return'#F0433E';if(this.runwayMonths<12)return'#E8A020';return'#1FB573';},
+    runwayBarStyle(){const pct=this.runwayMonths?Math.min(100,(this.runwayMonths/36)*100):0;return{left:pct+'%',background:this.runwayBarColor};},
+    runwayNote(){if(!this.runwayMonths)return'Add expenses';if(this.runwayMonths<6)return'Fundraise now';if(this.runwayMonths<12)return'Start raising';if(this.runwayMonths<18)return'Plan next round';return'Well capitalized';},
+    runwayBadgeClass(){if(!this.runwayMonths)return'idle';if(this.runwayMonths<6)return'danger';if(this.runwayMonths<12)return'warn';return'safe';},
+    reportDate(){return new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});},
+    isFileProtocol(){return window.location.protocol==='file:';},
+    syncLabel(){
+      if(!this.roomId){const m={idle:'Local',pending:'Saving…',saved:'Local',local:'Local',error:'Error'};return m[this.syncStatus]||'Local';}
+      const m={idle:'Connected',pending:'Syncing…',saved:'Synced ✓',synced:'Updated ✓',local:'Local only',error:'Offline'};return m[this.syncStatus]||'';
+    },
+    syncTip(){
+      if(!this.roomId)return'Create or join a room to collaborate';
+      const m={idle:'Connected to shared room',pending:'Pushing changes to collaborators…',saved:'All changes synced',synced:'Loaded a collaborator\'s update',local:'Cloud unavailable — saved locally',error:'Could not reach sync server'};return m[this.syncStatus]||'';
+    },
+    canvasInnerStyle(){return{transform:`scale(${this.canvasScale}) translate(${this.canvasX}px,${this.canvasY}px)`,transformOrigin:'0 0',width:this.svgSize.w+'px',height:this.svgSize.h+'px',position:'relative'};},
+    orgEdges(){
+      const edges=[];
+      this.orgNodes.forEach(node=>{
+        if(node.parentId==null)return;
+        const parent=this.orgNodes.find(n=>n.id===node.parentId);
+        if(!parent)return;
+        const px=parent.x+NODE_W/2,py=parent.y+NODE_H;
+        const cx=node.x+NODE_W/2,cy=node.y,my=(py+cy)/2;
+        edges.push({id:`${parent.id}-${node.id}`,path:`M ${px} ${py} C ${px} ${my}, ${cx} ${my}, ${cx} ${cy}`});
+      });
+      return edges;
+    }
+  },
+  methods:{
+    formatCurrency(v){return new Intl.NumberFormat('en-US',{style:'currency',currency:'EGP',maximumFractionDigits:0}).format(Number(v)||0);},
+    formatNum(v){return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(Number(v)||0);},
+    addCapexItem(){this.capexItems.push({id:this.nextCapexId++,name:'',category:'',amount:0});},
+    removeCapexItem(id){this.capexItems=this.capexItems.filter(i=>i.id!==id);},
+    addOpexItem(){this.opexItems.push({id:this.nextOpexId++,name:'',category:'',amount:0});},
+    removeOpexItem(id){this.opexItems=this.opexItems.filter(i=>i.id!==id);},
+    addAnnualItem(){this.annualItems.push({id:this.nextAnnualId++,name:'',category:'',amount:0});},
+    removeAnnualItem(id){this.annualItems=this.annualItems.filter(i=>i.id!==id);},
+    save(){
+      clearTimeout(this._saveTimer);
+      this.syncStatus='pending';
+      this._saveTimer=setTimeout(()=>this._doSave(),600);
+    },
+    _getSnapshot(){
+      return{_ts:Date.now(),startingCapital:this.startingCapital,capexItems:this.capexItems,
+        opexItems:this.opexItems,annualItems:this.annualItems,orgNodes:this.orgNodes,
+        nextCapexId:this.nextCapexId,nextOpexId:this.nextOpexId,
+        nextAnnualId:this.nextAnnualId,nextOrgId:this.nextOrgId};
+    },
+    async _doSave(){
+      const snap=this._getSnapshot();
+      this._lastSaveTs=snap._ts;
+      // Always save locally as a cache
+      try{localStorage.setItem('connectiq-plan-v2',JSON.stringify(snap));}catch(e){}
+      // If connected to a room, push to cloud
+      if(this.roomId){
+        try{
+          const r=await fetch('https://jsonblob.com/api/jsonBlob/'+this.roomId,{
+            method:'PUT',headers:{'Content-Type':'application/json','Accept':'application/json'},
+            body:JSON.stringify(snap)});
+          this.syncStatus=r.ok?'saved':'error';
+        }catch(e){this.syncStatus='error';}
+      }else{this.syncStatus='local';}
+    },
+    async loadLocal(){
+      try{
+        const raw=localStorage.getItem('connectiq-plan-v2');
+        if(raw)this._applySnap(JSON.parse(raw));
+      }catch(e){}
+    },
+    _applySnap(s){
+      this._skipWatch=true;
+      if(typeof s.startingCapital==='number')this.startingCapital=s.startingCapital;
+      if(Array.isArray(s.capexItems))this.capexItems=s.capexItems;
+      if(Array.isArray(s.opexItems))this.opexItems=s.opexItems;
+      if(Array.isArray(s.annualItems))this.annualItems=s.annualItems;
+      if(Array.isArray(s.orgNodes)&&s.orgNodes.length)this.orgNodes=s.orgNodes;
+      ['nextCapexId','nextOpexId','nextAnnualId','nextOrgId'].forEach(k=>{if(typeof s[k]==='number')this[k]=s[k];});
+      this._lastSaveTs=s._ts||0;
+      this.$nextTick(()=>{this._skipWatch=false;});
+    },
+    // ---- Room collaboration via jsonblob.com (free, no signup) ----
+    async createRoom(){
+      this.roomError='';
+      try{
+        const snap=this._getSnapshot();
+        const r=await fetch('https://jsonblob.com/api/jsonBlob',{
+          method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},
+          body:JSON.stringify(snap)});
+        if(!r.ok)throw new Error('API returned '+r.status);
+        // jsonblob returns blob ID in the Location header or x-jsonblob header
+        const loc=r.headers.get('Location')||'';
+        let blobId=loc.split('/').pop();
+        if(!blobId){const xj=r.headers.get('x-jsonblob');if(xj)blobId=xj;}
+        if(!blobId)throw new Error('Could not extract room ID from response');
+        this.roomId=blobId;
+        this._lastSaveTs=snap._ts;
+        this.shareLink=window.location.origin+window.location.pathname+'#room='+blobId;
+        this.syncStatus='saved';
+        this._startPolling();
+        // Save room ID locally so it survives refresh
+        try{localStorage.setItem('connectiq-roomId',blobId);}catch(e){}
+      }catch(e){
+        console.error('Create room:',e);
+        this.roomError='Could not create room — '+(this.isFileProtocol?'file:// protocol blocks API calls. Use a local server (see instructions above).':('check your internet connection and try again. ('+e.message+')'));
+      }
+    },
+    async joinRoom(code){
+      const id=(code||this.joinCode||'').trim();
+      if(!id)return;
+      this.roomError='';
+      try{
+        const r=await fetch('https://jsonblob.com/api/jsonBlob/'+id,{
+          headers:{'Accept':'application/json'}});
+        if(!r.ok)throw new Error('Room not found ('+r.status+')');
+        const data=await r.json();
+        this._applySnap(data);
+        this.roomId=id;
+        this._lastSaveTs=data._ts||0;
+        this.shareLink=window.location.origin+window.location.pathname+'#room='+id;
+        this.syncStatus='synced';
+        this.recomputeLevels();this.autoLayout();
+        this._startPolling();
+        try{localStorage.setItem('connectiq-roomId',id);}catch(e){}
+      }catch(e){
+        console.error('Join room:',e);
+        this.roomError='Could not join — double-check the room code and your internet.';
+      }
+    },
+    async pollRemote(){
+      if(!this.roomId)return;
+      try{
+        const r=await fetch('https://jsonblob.com/api/jsonBlob/'+this.roomId,{
+          headers:{'Accept':'application/json'}});
+        if(!r.ok)return;
+        const data=await r.json();
+        if(data._ts && data._ts!==this._lastSaveTs){
+          this._applySnap(data);
+          this.syncStatus='synced';
+          this.recomputeLevels();
+        }
+      }catch(e){/* network hiccup — will retry next interval */}
+    },
+    _startPolling(){
+      if(this._pollInterval)clearInterval(this._pollInterval);
+      this._pollInterval=setInterval(()=>this.pollRemote(),3000);
+    },
+    disconnectRoom(){
+      if(this._pollInterval)clearInterval(this._pollInterval);
+      this.roomId=null;this.shareLink='';this.syncStatus='local';
+      try{localStorage.removeItem('connectiq-roomId');}catch(e){}
+    },
+    async copyShareLink(){
+      try{
+        await navigator.clipboard.writeText(this.shareLink);
+        this._copyFlash=true;
+        setTimeout(()=>{this._copyFlash=false;},2000);
+      }catch(e){/* fallback: the link is visible for manual copy */}
+    },
+    async copyRoomCode(){
+      try{
+        await navigator.clipboard.writeText(this.roomId);
+        this._codeFlash=true;
+        setTimeout(()=>{this._codeFlash=false;},2000);
+      }catch(e){}
+    },
+    resetPlan(){
+      if(!confirm('Reset everything to the default Connect IQ plan? Your current edits will be lost.'))return;
+      try{localStorage.removeItem('connectiq-plan-v2');localStorage.removeItem('connectiq-roomId');}catch(e){}
+      if(this.roomId){}
+      window.location.hash='';
+      location.reload();
+    },
+    exportPlanData(){
+      try{
+        const snap=this._getSnapshot();
+        this.exportCode=btoa(unescape(encodeURIComponent(JSON.stringify(snap))));
+        this.showExport=true;this.showImport=false;
+      }catch(e){this.roomError='Export failed: '+e.message;}
+    },
+    async copyExportCode(){
+      try{await navigator.clipboard.writeText(this.exportCode);this._codeFlash=true;setTimeout(()=>{this._codeFlash=false;},2000);}catch(e){}
+    },
+    importPlanData(){
+      this.importError='';
+      if(!this.importCode.trim()){this.importError='Paste the shared code first.';return;}
+      try{
+        const json=decodeURIComponent(escape(atob(this.importCode.trim())));
+        const snap=JSON.parse(json);
+        if(!snap._ts&&!snap.capexItems){this.importError='Invalid plan data.';return;}
+        this._applySnap(snap);
+        this.recomputeLevels();this.autoLayout();
+        this.showImport=false;this.importCode='';
+        this.save();
+      }catch(e){this.importError='Invalid code — make sure you copied the full text.';}
+    },
+    selectOrgNode(node){if(this.draggingNode)return;this.selectedOrgNode=node;},
+    recomputeLevels(){const{map,roots}=buildTree(this.orgNodes);computeLevels(roots,map);this.orgNodes.forEach(n=>{n.level=map[n.id]?.level??0;});},
+    addOrgNode(){const root=this.orgNodes.find(n=>n.parentId===null);const nn={id:this.nextOrgId++,parentId:root?root.id:null,title:'New Role',name:'',dept:'',x:100+Math.random()*300,y:200+Math.random()*100,level:1};this.orgNodes.push(nn);this.recomputeLevels();this.$nextTick(()=>{this.selectedOrgNode=nn;});},
+    addChildNode(){if(!this.selectedOrgNode)return;const nn={id:this.nextOrgId++,parentId:this.selectedOrgNode.id,title:'New Role',name:'',dept:'',x:this.selectedOrgNode.x+20,y:this.selectedOrgNode.y+NODE_H+V_GAP,level:this.selectedOrgNode.level+1};this.orgNodes.push(nn);this.recomputeLevels();this.$nextTick(()=>{this.selectedOrgNode=nn;});},
+    removeOrgNode(){if(!this.selectedOrgNode||this.selectedOrgNode.level===0)return;const id=this.selectedOrgNode.id;this.orgNodes.forEach(n=>{if(n.parentId===id)n.parentId=this.selectedOrgNode.parentId;});this.orgNodes=this.orgNodes.filter(n=>n.id!==id);this.selectedOrgNode=null;this.recomputeLevels();},
+    onParentChange(){this.recomputeLevels();},
+    autoLayout(){const{map,roots}=buildTree(this.orgNodes);computeLevels(roots,map);layoutTree(roots.map(r=>map[r.id]));this.orgNodes.forEach(n=>{const m=map[n.id];if(m){n.x=m.x;n.y=m.y;n.level=m.level;}});this.updateSvgSize();},
+    updateSvgSize(){const mx=Math.max(...this.orgNodes.map(n=>n.x+NODE_W))+60;const my=Math.max(...this.orgNodes.map(n=>n.y+NODE_H))+60;this.svgSize={w:Math.max(mx,800),h:Math.max(my,400)};},
+    onCanvasMouseDown(e){if(e.target.closest('.org-node')||e.target.closest('.org-edit-panel')||e.target.closest('.org-zoom-bar'))return;this.isPanning=true;this.panStart={x:e.clientX-this.canvasX,y:e.clientY-this.canvasY};this.selectedOrgNode=null;},
+    onCanvasMouseMove(e){if(this.isPanning&&this.panStart){this.canvasX=e.clientX-this.panStart.x;this.canvasY=e.clientY-this.panStart.y;}if(this.draggingNode&&this.dragOffset){const rect=this.$refs.orgCanvas.getBoundingClientRect();this.draggingNode.x=(e.clientX-rect.left)/this.canvasScale-this.canvasX-this.dragOffset.x;this.draggingNode.y=(e.clientY-rect.top)/this.canvasScale-this.canvasY-this.dragOffset.y;this.updateSvgSize();}},
+    onCanvasMouseUp(){this.isPanning=false;this.panStart=null;this.draggingNode=null;this.dragOffset=null;},
+    onCanvasWheel(e){const d=e.deltaY>0?-0.08:0.08;this.canvasScale=Math.min(2,Math.max(0.3,this.canvasScale+d));},
+    onNodeMouseDown(e,node){e.preventDefault();const rect=this.$refs.orgCanvas.getBoundingClientRect();const mx=(e.clientX-rect.left)/this.canvasScale-this.canvasX;const my=(e.clientY-rect.top)/this.canvasScale-this.canvasY;this.draggingNode=node;this.dragOffset={x:mx-node.x,y:my-node.y};},
+    zoom(d){this.canvasScale=Math.min(2,Math.max(0.3,this.canvasScale+d));},
+    resetZoom(){this.canvasScale=1;this.canvasX=0;this.canvasY=0;},
+    async generatePdf(action){
+      if(this.isExporting)return;this.isExporting=true;let pw=null;
+      if(action==='preview'){pw=window.open('','_blank');if(pw)pw.document.write('<title>Generating…</title><body style="font-family:sans-serif;padding:2rem;color:#475569">Generating PDF…</body>');}
+      document.body.classList.add('pdf-export-mode');
+      await new Promise(r=>setTimeout(r,60));
+      const el=this.$refs.reportContent;
+      const opt={margin:[10,10,10,10],filename:`startup-financial-plan-${new Date().toISOString().slice(0,10)}.pdf`,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}};
+      try{
+        const worker=html2pdf().set(opt).from(el);
+        if(action==='download')await worker.save();
+        else{const blob=await worker.outputPdf('blob');const url=URL.createObjectURL(blob);if(pw&&!pw.closed)pw.location.href=url;else window.open(url,'_blank');}
+      }catch(err){console.error('PDF error:',err);}
+      finally{document.body.classList.remove('pdf-export-mode');this.isExporting=false;}
+    }
+  },
+  watch:{
+    startingCapital(){if(!this._skipWatch)this.save();},
+    capexItems:{handler(){if(!this._skipWatch)this.save();},deep:true},
+    opexItems:{handler(){if(!this._skipWatch)this.save();},deep:true},
+    annualItems:{handler(){if(!this._skipWatch)this.save();},deep:true},
+    orgNodes:{handler(){if(!this._skipWatch)this.save();},deep:true}
+  },
+  async mounted(){
+    // 1. Check URL hash for room code (e.g. #room=abc123)
+    const hash=window.location.hash||'';
+    const roomMatch=hash.match(/#room=(.+)/);
+    if(roomMatch){
+      await this.joinRoom(roomMatch[1]);
+    }else{
+      // 2. Check if we had a room from a previous session
+      try{
+        const savedRoom=localStorage.getItem('connectiq-roomId');
+        if(savedRoom)await this.joinRoom(savedRoom);
+        else await this.loadLocal();
+      }catch(e){await this.loadLocal();}
+    }
+    this.recomputeLevels();this.autoLayout();
+  },
+  beforeUnmount(){if(this._pollInterval)clearInterval(this._pollInterval);}
+}).mount('#app');
+</script>
+</body>
+</html>
