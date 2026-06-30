@@ -300,10 +300,131 @@ body.pdf-export-mode .cmd-bar, body.pdf-export-mode .runway-strip { display: non
   .cmd-metric { flex: 1 1 45%; }
   .capital-card { flex-direction: column; align-items: flex-start; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   REVITALIZED LAYER — richer palette, depth, motion
+   ════════════════════════════════════════════════════════════ */
+:root {
+  --teal: #12B5C4;
+  --violet: #8B5CF6;
+  --grad-amber: linear-gradient(135deg, #F2B341 0%, #E8A020 55%, #cf8410 100%);
+  --grad-teal: linear-gradient(135deg, #2DD4DF 0%, #12B5C4 100%);
+  --grad-violet: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%);
+}
+
+/* Living, tinted backdrop instead of flat paper */
+body {
+  background:
+    radial-gradient(820px 520px at 88% -8%, rgba(18,181,196,0.10), transparent 60%),
+    radial-gradient(760px 600px at -6% 18%, rgba(232,160,32,0.11), transparent 58%),
+    radial-gradient(900px 700px at 60% 120%, rgba(139,92,246,0.08), transparent 60%),
+    #F4F6FB;
+  background-attachment: fixed;
+}
+
+/* ── HERO ── */
+.hero { position: relative; overflow: hidden; background: linear-gradient(150deg, #060B16 0%, #0B1424 48%, #101F38 100%); border-bottom: 1px solid var(--border); }
+.hero::before { content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(620px 360px at 12% -20%, rgba(232,160,32,0.30), transparent 60%),
+    radial-gradient(560px 420px at 92% 130%, rgba(18,181,196,0.26), transparent 60%),
+    radial-gradient(480px 380px at 70% -30%, rgba(139,92,246,0.22), transparent 60%);
+  animation: heroDrift 18s ease-in-out infinite alternate; }
+.hero::after { content: ''; position: absolute; inset: 0; opacity: 0.5;
+  background-image: linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+  background-size: 46px 46px; mask-image: radial-gradient(120% 120% at 50% 0%, #000 30%, transparent 78%); }
+@keyframes heroDrift { 0% { transform: translate3d(0,0,0) scale(1); } 100% { transform: translate3d(-2%,2%,0) scale(1.08); } }
+.hero-inner { position: relative; z-index: 1; max-width: 1160px; margin: 0 auto; padding: 52px 28px 58px; }
+.hero-kicker { display: inline-flex; align-items: center; gap: 9px; font-family: var(--display); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--amber-bright); background: rgba(232,160,32,0.10); border: 1px solid rgba(232,160,32,0.28); padding: 7px 15px; border-radius: 999px; }
+.hero-kicker .pip { width: 6px; height: 6px; border-radius: 50%; background: var(--amber-bright); box-shadow: 0 0 10px var(--amber-bright); animation: pulse 1.6s ease-in-out infinite; }
+.hero-title { font-family: var(--display); font-weight: 700; font-size: clamp(2.5rem, 6vw, 4.4rem); line-height: 0.98; letter-spacing: -0.035em; margin: 22px 0 0; color: #fff; }
+.hero-title .grad { background: var(--grad-amber); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.hero-sub { max-width: 560px; margin: 18px 0 0; font-size: 0.98rem; line-height: 1.6; color: rgba(255,255,255,0.6); }
+.hero-stats { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+.hero-stat { position: relative; padding: 16px 22px 16px 20px; border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); backdrop-filter: blur(8px); min-width: 150px; overflow: hidden; }
+.hero-stat::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+.hero-stat.a::before { background: var(--grad-amber); } .hero-stat.t::before { background: var(--grad-teal); } .hero-stat.v::before { background: var(--grad-violet); }
+.hero-stat-label { font-family: var(--display); font-size: 0.58rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.42); }
+.hero-stat-value { font-family: var(--mono); font-size: 1.5rem; font-weight: 500; color: #fff; margin-top: 6px; line-height: 1; font-variant-numeric: tabular-nums; }
+.hero-stat-value.amber { color: var(--amber-bright); }
+@media (max-width: 640px) { .hero-inner { padding: 38px 18px 42px; } .hero-stat { flex: 1 1 40%; min-width: 0; } }
+
+/* ── Command bar: deeper glassy gradient ── */
+.cmd-bar { background: linear-gradient(180deg, rgba(8,15,30,0.92), rgba(8,15,30,0.82)); backdrop-filter: saturate(160%) blur(14px); box-shadow: 0 1px 0 rgba(232,160,32,0.10), 0 14px 40px rgba(8,15,30,0.30); }
+.cmd-brand-icon { background: var(--grad-amber); box-shadow: 0 4px 16px rgba(232,160,32,0.5); animation: floatY 4.5s ease-in-out infinite; }
+@keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.cmd-metric-value.amber { color: var(--amber-bright); text-shadow: 0 0 18px rgba(242,179,65,0.35); }
+
+/* ── Buttons: gradient + glow ── */
+.btn-amber, .share-btn-primary, .org-btn-amber { background: var(--grad-amber); }
+.btn-amber:hover { box-shadow: 0 8px 26px rgba(232,160,32,0.55); }
+
+/* ── Runway strip: vivid glow ── */
+.runway-strip { background: linear-gradient(180deg, #0B1424 0%, #0E1B30 100%); box-shadow: inset 0 18px 40px -30px rgba(18,181,196,0.4); }
+.runway-bar-fill { width: 4px; height: 19px; box-shadow: 0 0 0 2px rgba(8,15,30,0.6), 0 0 16px 2px currentColor; }
+.runway-months { text-shadow: 0 0 22px currentColor; }
+
+/* ── Section headers: gradient icon tiles + animated rule ── */
+.section-eyebrow { position: relative; padding-left: 2px; }
+.section-icon { color: #fff !important; box-shadow: 0 6px 18px -6px rgba(8,15,30,0.45); transition: transform 0.2s ease; }
+.section-icon.amber { background: var(--grad-amber) !important; }
+.section-icon.blue { background: var(--grad-teal) !important; }
+.section-icon.purple { background: var(--grad-violet) !important; }
+.section-gap:hover .section-icon { transform: rotate(-6deg) scale(1.06); }
+.section-title { font-size: 1.12rem; font-weight: 700; }
+
+/* ── Cards: gradient hairline, lift, entrance ── */
+.card { position: relative; border-radius: 18px; box-shadow: 0 1px 2px rgba(8,15,30,0.05), 0 18px 44px -28px rgba(8,15,30,0.28); transition: transform 0.25s cubic-bezier(.2,.8,.2,1), box-shadow 0.25s ease; overflow: hidden; }
+.card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, var(--amber) 0%, var(--teal) 50%, var(--violet) 100%); opacity: 0.85; }
+.card:hover { transform: translateY(-3px); box-shadow: 0 1px 2px rgba(8,15,30,0.05), 0 30px 60px -30px rgba(8,15,30,0.34); }
+.section-gap, .capital-card { animation: riseIn 0.6s cubic-bezier(.2,.8,.2,1) both; }
+.section-gap:nth-of-type(2) { animation-delay: 0.05s; }
+.section-gap:nth-of-type(3) { animation-delay: 0.10s; }
+.section-gap:nth-of-type(4) { animation-delay: 0.15s; }
+.section-gap:nth-of-type(5) { animation-delay: 0.20s; }
+@keyframes riseIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Budget hero cell: aurora ── */
+.budget-cell-hero { position: relative; overflow: hidden; background: linear-gradient(150deg, #0B1424 0%, #142844 100%); }
+.budget-cell-hero::after { content: ''; position: absolute; inset: 0; background: radial-gradient(360px 200px at 110% -30%, rgba(232,160,32,0.30), transparent 60%), radial-gradient(300px 200px at -10% 130%, rgba(18,181,196,0.22), transparent 60%); }
+.budget-cell-hero > * { position: relative; z-index: 1; }
+.budget-cell-hero .budget-cell-value { text-shadow: 0 0 24px rgba(242,179,65,0.4); }
+
+/* ── Add-line buttons & org canvas polish ── */
+.org-canvas { background: radial-gradient(ellipse at 28% 36%, rgba(232,160,32,0.07) 0%, transparent 58%), radial-gradient(ellipse at 80% 90%, rgba(18,181,196,0.07) 0%, transparent 55%), linear-gradient(160deg,#f8fafc 0%,#eef3f8 100%); }
+
+/* Keep PDF clean — strip the decorative layers */
+body.pdf-export-mode { background: #fff !important; }
+body.pdf-export-mode .card::before { display: none !important; }
+body.pdf-export-mode .card { box-shadow: none !important; transform: none !important; }
+body.pdf-export-mode .hero { display: none !important; }
 </style>
 </head>
 <body>
 <div id="app">
+
+<!-- HERO -->
+<section class="hero no-print">
+  <div class="hero-inner">
+    <span class="hero-kicker"><span class="pip"></span>Live financial model · Egypt</span>
+    <h1 class="hero-title">Payroll &amp; org plan,<br><span class="grad">built to breathe.</span></h1>
+    <p class="hero-sub">Every figure below recalculates as you type — capital, burn, net-to-gross payroll and runway, in real time across your team.</p>
+    <div class="hero-stats">
+      <div class="hero-stat a">
+        <div class="hero-stat-label">Starting Capital</div>
+        <div class="hero-stat-value amber">{{ formatCurrency(startingCapital) }}</div>
+      </div>
+      <div class="hero-stat t">
+        <div class="hero-stat-label">Monthly Burn</div>
+        <div class="hero-stat-value">{{ formatCurrency(effectiveMonthlyBurn) }}</div>
+      </div>
+      <div class="hero-stat v">
+        <div class="hero-stat-label">Runway</div>
+        <div class="hero-stat-value">{{ runwayMonths !== null ? runwayMonths.toFixed(1) + ' mo' : '—' }}</div>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- COMMAND BAR -->
 <header class="cmd-bar no-print">
