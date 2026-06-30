@@ -431,8 +431,7 @@ body.pdf-export-mode .cmd-bar, body.pdf-export-mode .runway-strip { display: non
               {{ syncLabel }} — polls every 3s
             </div>
             
-            <!-- Disabling the Disconnect button so users don't accidentally leave the Master Room -->
-            <!-- <button @click="disconnectRoom" class="share-btn-disconnect"><i class="fa-solid fa-link-slash"></i> Disconnect</button> -->
+            <button @click="disconnectRoom" class="share-btn-disconnect"><i class="fa-solid fa-link-slash"></i> Disconnect</button>
           </div>
 
           <div v-if="roomError" class="share-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ roomError }}</div>
@@ -1053,9 +1052,6 @@ createApp({
   };},
   computed:{
     // --- Payroll budget summary, derived from per-employee rows ---
-    // (Single source of truth = payrollDetail. The source doc's summary
-    //  totals were 1,000 EGP overstated due to a transcription slip;
-    //  these recompute cleanly so the numbers always tie out.)
     payrollHeadcount(){return this.payrollDetail.reduce((s,r)=>s+r.count,0);},
     payrollTotalNet(){return this.payrollDetail.reduce((s,r)=>s+r.count*r.net,0);},
     payrollTotalGross(){return this.payrollDetail.reduce((s,r)=>s+r.count*r.gross,0);},
@@ -1090,10 +1086,6 @@ createApp({
     syncLabel(){
       if(!this.roomId){const m={idle:'Local',pending:'Saving…',saved:'Local',local:'Local',error:'Error'};return m[this.syncStatus]||'Local';}
       const m={idle:'Connected',pending:'Syncing…',saved:'Synced ✓',synced:'Updated ✓',local:'Local only',error:'Offline'};return m[this.syncStatus]||'';
-    },
-    syncTip(){
-      if(!this.roomId)return'Create or join a room to collaborate';
-      const m={idle:'Connected to shared room',pending:'Pushing changes to collaborators…',saved:'All changes synced',synced:'Loaded a collaborator\'s update',local:'Cloud unavailable — saved locally',error:'Could not reach sync server'};return m[this.syncStatus]||'';
     },
     canvasInnerStyle(){return{transform:`scale(${this.canvasScale}) translate(${this.canvasX}px,${this.canvasY}px)`,transformOrigin:'0 0',width:this.svgSize.w+'px',height:this.svgSize.h+'px',position:'relative'};},
     orgEdges(){
@@ -1176,7 +1168,7 @@ createApp({
         if(!r.ok)throw new Error('API returned '+r.status);
         
         const data = await r.json();
-        const blobId = data.id; // npoint gives us the unique string right here
+        const blobId = data.id; 
         
         if(!blobId)throw new Error('Could not extract room ID from response');
         
@@ -1186,11 +1178,10 @@ createApp({
         this.syncStatus='saved';
         this._startPolling();
         
-        // Save room ID locally so it survives refresh
         try{localStorage.setItem('connectiq-roomId',blobId);}catch(e){}
       }catch(e){
         console.error('Create room:',e);
-        this.roomError='Could not create room — check your internet connection and try again. ('+e.message+')';
+        this.roomError='Could not create room. (Error: ' + e.message + ')';
       }
     },
     async joinRoom(code){
@@ -1232,7 +1223,7 @@ createApp({
           this.syncStatus='synced';
           this.recomputeLevels();
         }
-      }catch(e){/* network hiccup — will retry next interval */}
+      }catch(e){/* network hiccup */}
     },
     _startPolling(){
       if(this._pollInterval)clearInterval(this._pollInterval);
@@ -1248,7 +1239,7 @@ createApp({
         await navigator.clipboard.writeText(this.shareLink);
         this._copyFlash=true;
         setTimeout(()=>{this._copyFlash=false;},2000);
-      }catch(e){/* fallback: the link is visible for manual copy */}
+      }catch(e){}
     },
     async copyRoomCode(){
       try{
@@ -1258,9 +1249,8 @@ createApp({
       }catch(e){}
     },
     resetPlan(){
-      if(!confirm('Reset everything to the default Connect IQ plan? Your current edits will be lost.'))return;
+      if(!confirm('Reset everything?'))return;
       try{localStorage.removeItem('connectiq-plan-v2');localStorage.removeItem('connectiq-roomId');}catch(e){}
-      if(this.roomId){}
       window.location.hash='';
       location.reload();
     },
@@ -1268,7 +1258,7 @@ createApp({
       try{
         const snap=this._getSnapshot();
         this.exportCode=btoa(unescape(encodeURIComponent(JSON.stringify(snap))));
-        this.showExport=true;this.showImport=false;
+        this.showExport=true;
       }catch(e){this.roomError='Export failed: '+e.message;}
     },
     async copyExportCode(){
@@ -1276,16 +1266,14 @@ createApp({
     },
     importPlanData(){
       this.importError='';
-      if(!this.importCode.trim()){this.importError='Paste the shared code first.';return;}
+      if(!this.importCode.trim()){this.importError='Paste code first.';return;}
       try{
         const json=decodeURIComponent(escape(atob(this.importCode.trim())));
         const snap=JSON.parse(json);
-        if(!snap._ts&&!snap.capexItems){this.importError='Invalid plan data.';return;}
         this._applySnap(snap);
         this.recomputeLevels();this.autoLayout();
-        this.showImport=false;this.importCode='';
         this.save();
-      }catch(e){this.importError='Invalid code — make sure you copied the full text.';}
+      }catch(e){this.importError='Invalid code.';}
     },
     selectOrgNode(node){if(this.draggingNode)return;this.selectedOrgNode=node;},
     recomputeLevels(){const{map,roots}=buildTree(this.orgNodes);computeLevels(roots,map);this.orgNodes.forEach(n=>{n.level=map[n.id]?.level??0;});},
@@ -1303,16 +1291,14 @@ createApp({
     zoom(d){this.canvasScale=Math.min(2,Math.max(0.3,this.canvasScale+d));},
     resetZoom(){this.canvasScale=1;this.canvasX=0;this.canvasY=0;},
     async generatePdf(action){
-      if(this.isExporting)return;this.isExporting=true;let pw=null;
-      if(action==='preview'){pw=window.open('','_blank');if(pw)pw.document.write('<title>Generating…</title><body style="font-family:sans-serif;padding:2rem;color:#475569">Generating PDF…</body>');}
+      if(this.isExporting)return;this.isExporting=true;
       document.body.classList.add('pdf-export-mode');
       await new Promise(r=>setTimeout(r,60));
       const el=this.$refs.reportContent;
-      const opt={margin:[10,10,10,10],filename:`startup-financial-plan-${new Date().toISOString().slice(0,10)}.pdf`,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}};
+      const opt={margin:[10,10,10,10],filename:`startup-financial-plan-${new Date().toISOString().slice(0,10)}.pdf`,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}};
       try{
         const worker=html2pdf().set(opt).from(el);
-        if(action==='download')await worker.save();
-        else{const blob=await worker.outputPdf('blob');const url=URL.createObjectURL(blob);if(pw&&!pw.closed)pw.location.href=url;else window.open(url,'_blank');}
+        await worker.save();
       }catch(err){console.error('PDF error:',err);}
       finally{document.body.classList.remove('pdf-export-mode');this.isExporting=false;}
     }
@@ -1325,23 +1311,21 @@ createApp({
     orgNodes:{handler(){if(!this._skipWatch)this.save();},deep:true}
   },
   async mounted(){
-    // === MASTER ROOM OVERRIDE ===
-    // Get your new code from the site, paste it here, then comment out the Create Room button again!
+    // === MASTER ROOM CONFIGURATION ===
+    // 1. Create a room on your site first.
+    // 2. Copy the resulting ID (e.g., '12345abcdef')
+    // 3. Paste it between the quotes below.
     const MASTER_ROOM_ID = ''; 
 
     try {
-      if (MASTER_ROOM_ID && MASTER_ROOM_ID !== 'PASTE_YOUR_ROOM_CODE_HERE') {
-        // Automatically join the master room
+      if (MASTER_ROOM_ID && MASTER_ROOM_ID !== '') {
         await this.joinRoom(MASTER_ROOM_ID);
       } else {
-         // Fallback if ID hasn't been set yet
          await this.loadLocal();
       }
     } catch(e) {
-      console.error("Could not reach sync server. Loading local cache.");
       await this.loadLocal();
     }
-
     this.recomputeLevels();
     this.autoLayout();
   },
