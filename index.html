@@ -1137,9 +1137,11 @@ createApp({
       // If connected to a room, push to cloud
       if(this.roomId){
         try{
-          const r=await fetch('https://jsonblob.com/api/jsonBlob/'+this.roomId,{
-            method:'PUT',headers:{'Content-Type':'application/json','Accept':'application/json'},
-            body:JSON.stringify(snap)});
+          const r=await fetch('https://api.npoint.io/'+this.roomId,{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Accept':'application/json'},
+            body:JSON.stringify(snap)
+          });
           this.syncStatus=r.ok?'saved':'error';
         }catch(e){this.syncStatus='error';}
       }else{this.syncStatus='local';}
@@ -1161,30 +1163,34 @@ createApp({
       this._lastSaveTs=s._ts||0;
       this.$nextTick(()=>{this._skipWatch=false;});
     },
-    // ---- Room collaboration via jsonblob.com (free, no signup) ----
+    // ---- Room collaboration via npoint.io ----
     async createRoom(){
       this.roomError='';
       try{
         const snap=this._getSnapshot();
-        const r=await fetch('https://jsonblob.com/api/jsonBlob',{
-          method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},
-          body:JSON.stringify(snap)});
+        const r=await fetch('https://api.npoint.io/',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Accept':'application/json'},
+          body:JSON.stringify(snap)
+        });
         if(!r.ok)throw new Error('API returned '+r.status);
-        // jsonblob returns blob ID in the Location header or x-jsonblob header
-        const loc=r.headers.get('Location')||'';
-        let blobId=loc.split('/').pop();
-        if(!blobId){const xj=r.headers.get('x-jsonblob');if(xj)blobId=xj;}
+        
+        const data = await r.json();
+        const blobId = data.id; // npoint gives us the unique string right here
+        
         if(!blobId)throw new Error('Could not extract room ID from response');
+        
         this.roomId=blobId;
         this._lastSaveTs=snap._ts;
         this.shareLink=window.location.origin+window.location.pathname+'#room='+blobId;
         this.syncStatus='saved';
         this._startPolling();
+        
         // Save room ID locally so it survives refresh
         try{localStorage.setItem('connectiq-roomId',blobId);}catch(e){}
       }catch(e){
         console.error('Create room:',e);
-        this.roomError='Could not create room — '+(this.isFileProtocol?'file:// protocol blocks API calls. Use a local server (see instructions above).':('check your internet connection and try again. ('+e.message+')'));
+        this.roomError='Could not create room — check your internet connection and try again. ('+e.message+')';
       }
     },
     async joinRoom(code){
@@ -1192,9 +1198,11 @@ createApp({
       if(!id)return;
       this.roomError='';
       try{
-        const r=await fetch('https://jsonblob.com/api/jsonBlob/'+id,{
-          headers:{'Accept':'application/json'}});
+        const r=await fetch('https://api.npoint.io/'+id,{
+          headers:{'Accept':'application/json'}
+        });
         if(!r.ok)throw new Error('Room not found ('+r.status+')');
+        
         const data=await r.json();
         this._applySnap(data);
         this.roomId=id;
@@ -1203,6 +1211,7 @@ createApp({
         this.syncStatus='synced';
         this.recomputeLevels();this.autoLayout();
         this._startPolling();
+        
         try{localStorage.setItem('connectiq-roomId',id);}catch(e){}
       }catch(e){
         console.error('Join room:',e);
@@ -1212,9 +1221,11 @@ createApp({
     async pollRemote(){
       if(!this.roomId)return;
       try{
-        const r=await fetch('https://jsonblob.com/api/jsonBlob/'+this.roomId,{
-          headers:{'Accept':'application/json'}});
+        const r=await fetch('https://api.npoint.io/'+this.roomId,{
+          headers:{'Accept':'application/json'}
+        });
         if(!r.ok)return;
+        
         const data=await r.json();
         if(data._ts && data._ts!==this._lastSaveTs){
           this._applySnap(data);
@@ -1315,7 +1326,8 @@ createApp({
   },
   async mounted(){
     // === MASTER ROOM OVERRIDE ===
-    const MASTER_ROOM_ID = ''; // Temporarily blank to fix the error
+    // Get your new code from the site, paste it here, then comment out the Create Room button again!
+    const MASTER_ROOM_ID = ''; 
 
     try {
       if (MASTER_ROOM_ID && MASTER_ROOM_ID !== 'PASTE_YOUR_ROOM_CODE_HERE') {
