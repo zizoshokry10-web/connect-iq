@@ -387,8 +387,9 @@ body.pdf-export-mode .cmd-bar, body.pdf-export-mode .runway-strip { display: non
             <!-- Normal HTTP mode — real-time sync available -->
             <div v-else>
               <p class="share-desc">Create a shared room so anyone with the code can view and edit this plan in real time.</p>
-              <!-- Disabling the Create Room button for Master Room setup -->
-              <!-- <button @click="createRoom" class="share-btn-primary"><i class="fa-solid fa-plus"></i> Create Room</button> -->
+              
+              <button @click="createRoom" class="share-btn-primary"><i class="fa-solid fa-plus"></i> Create Room</button>
+              
               <div class="share-divider"><span>or join an existing room</span></div>
               <div class="share-join-row">
                 <input v-model="joinCode" type="text" placeholder="Paste room code…" class="share-input" @keyup.enter="joinRoom()" />
@@ -1314,11 +1315,10 @@ createApp({
   },
   async mounted(){
     // === MASTER ROOM OVERRIDE ===
-    // Replace the string below with the Room Code you generated via the Share menu on the live site.
-    const MASTER_ROOM_ID = '01155686874';
+    const MASTER_ROOM_ID = ''; // Temporarily blank to fix the error
 
     try {
-      if (MASTER_ROOM_ID !== 'PASTE_YOUR_ROOM_CODE_HERE') {
+      if (MASTER_ROOM_ID && MASTER_ROOM_ID !== 'PASTE_YOUR_ROOM_CODE_HERE') {
         // Automatically join the master room
         await this.joinRoom(MASTER_ROOM_ID);
       } else {
