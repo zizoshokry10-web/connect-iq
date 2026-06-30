@@ -387,7 +387,8 @@ body.pdf-export-mode .cmd-bar, body.pdf-export-mode .runway-strip { display: non
             <!-- Normal HTTP mode — real-time sync available -->
             <div v-else>
               <p class="share-desc">Create a shared room so anyone with the code can view and edit this plan in real time.</p>
-              <button @click="createRoom" class="share-btn-primary"><i class="fa-solid fa-plus"></i> Create Room</button>
+              <!-- Disabling the Create Room button for Master Room setup -->
+              <!-- <button @click="createRoom" class="share-btn-primary"><i class="fa-solid fa-plus"></i> Create Room</button> -->
               <div class="share-divider"><span>or join an existing room</span></div>
               <div class="share-join-row">
                 <input v-model="joinCode" type="text" placeholder="Paste room code…" class="share-input" @keyup.enter="joinRoom()" />
@@ -428,8 +429,9 @@ body.pdf-export-mode .cmd-bar, body.pdf-export-mode .runway-strip { display: non
               <span class="sync-dot-inline" :class="syncStatus==='saved'||syncStatus==='synced' ? 'dot-green' : syncStatus==='pending' ? 'dot-amber' : 'dot-dim'"></span>
               {{ syncLabel }} — polls every 3s
             </div>
-
-            <button @click="disconnectRoom" class="share-btn-disconnect"><i class="fa-solid fa-link-slash"></i> Disconnect</button>
+            
+            <!-- Disabling the Disconnect button so users don't accidentally leave the Master Room -->
+            <!-- <button @click="disconnectRoom" class="share-btn-disconnect"><i class="fa-solid fa-link-slash"></i> Disconnect</button> -->
           </div>
 
           <div v-if="roomError" class="share-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ roomError }}</div>
@@ -929,7 +931,7 @@ body.pdf-export-mode .cmd-bar, body.pdf-export-mode .runway-strip { display: non
 </div><!-- /reportContent -->
 
 <div class="no-print" style="text-align:center;padding:18px;font-family:var(--display);font-size:0.64rem;color:#aab4c2;letter-spacing:0.01em">
-  Click <b>Share</b> to create a room · Collaborators join with the code · Changes sync every 3s · {{ reportDate }}
+  Collaborators join automatically · Changes sync every 3s · {{ reportDate }}
 </div>
 
 </div><!-- /app -->
@@ -1311,20 +1313,25 @@ createApp({
     orgNodes:{handler(){if(!this._skipWatch)this.save();},deep:true}
   },
   async mounted(){
-    // 1. Check URL hash for room code (e.g. #room=abc123)
-    const hash=window.location.hash||'';
-    const roomMatch=hash.match(/#room=(.+)/);
-    if(roomMatch){
-      await this.joinRoom(roomMatch[1]);
-    }else{
-      // 2. Check if we had a room from a previous session
-      try{
-        const savedRoom=localStorage.getItem('connectiq-roomId');
-        if(savedRoom)await this.joinRoom(savedRoom);
-        else await this.loadLocal();
-      }catch(e){await this.loadLocal();}
+    // === MASTER ROOM OVERRIDE ===
+    // Replace the string below with the Room Code you generated via the Share menu on the live site.
+    const MASTER_ROOM_ID = '01155686874';
+
+    try {
+      if (MASTER_ROOM_ID !== 'PASTE_YOUR_ROOM_CODE_HERE') {
+        // Automatically join the master room
+        await this.joinRoom(MASTER_ROOM_ID);
+      } else {
+         // Fallback if ID hasn't been set yet
+         await this.loadLocal();
+      }
+    } catch(e) {
+      console.error("Could not reach sync server. Loading local cache.");
+      await this.loadLocal();
     }
-    this.recomputeLevels();this.autoLayout();
+
+    this.recomputeLevels();
+    this.autoLayout();
   },
   beforeUnmount(){if(this._pollInterval)clearInterval(this._pollInterval);}
 }).mount('#app');
