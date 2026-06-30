@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; }
 :root {
@@ -343,99 +344,10 @@ body.pdf-export-mode .cmd-bar, body.pdf-export-mode .runway-strip { display: non
       </div>
     </div>
     <div class="cmd-actions">
-      <div style="position:relative">
-        <button @click="showSharePanel=!showSharePanel" class="btn-ghost" :class="{'btn-ghost-active':roomId}">
-          <i class="fa-solid" :class="roomId ? 'fa-link' : 'fa-share-nodes'" style="font-size:0.68rem"></i>
-          <span class="sync-dot-inline" :class="roomId ? (syncStatus==='saved'||syncStatus==='synced' ? 'dot-green' : 'dot-amber') : 'dot-dim'"></span>
-          {{ roomId ? syncLabel : 'Share' }}
-        </button>
-        <!-- Backdrop to close panel on outside click -->
-        <div v-if="showSharePanel" class="share-backdrop" @click="showSharePanel=false"></div>
-        <!-- Share dropdown panel -->
-        <div v-if="showSharePanel" class="share-panel" @click.stop>
-          <div class="share-panel-header">
-            <span style="font-weight:600;font-size:0.82rem">Collaboration</span>
-            <button @click="showSharePanel=false" class="share-close"><i class="fa-solid fa-xmark"></i></button>
-          </div>
-
-          <!-- Not connected state -->
-          <div v-if="!roomId">
-            <!-- File protocol warning -->
-            <div v-if="isFileProtocol" style="margin-bottom:14px">
-              <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:12px 14px;margin-bottom:12px">
-                <div style="font-family:var(--display);font-weight:600;font-size:0.74rem;color:#92400e;margin-bottom:6px"><i class="fa-solid fa-triangle-exclamation" style="margin-right:5px"></i> Real-time sync needs a local server</div>
-                <p style="font-size:0.7rem;color:#78350f;line-height:1.5;margin:0 0 8px">Your browser blocks API calls from <code style="background:#fde68a;padding:1px 5px;border-radius:4px;font-size:0.66rem">file://</code> pages. To use live sync, open a terminal in the folder with this file and run:</p>
-                <code style="display:block;background:#1e293b;color:#fbbf24;font-family:var(--mono);font-size:0.7rem;padding:9px 12px;border-radius:7px;word-break:break-all;line-height:1.5">python -m http.server 8000</code>
-                <p style="font-size:0.66rem;color:#92400e;line-height:1.5;margin:6px 0 0">Then open <a href="http://localhost:8000" style="color:#b45309;text-decoration:underline">http://localhost:8000</a> and use Share from there.</p>
-              </div>
-              <div class="share-divider"><span>or share via copy / paste</span></div>
-              <button @click="exportPlanData" class="share-btn-primary" style="margin-bottom:8px"><i class="fa-solid fa-arrow-up-from-bracket"></i> Export Plan Data</button>
-              <div v-if="showExport" style="margin-bottom:10px">
-                <label class="share-field-label">Copy this code and send to coworker</label>
-                <div class="share-copy-row">
-                  <code class="share-code share-code-sm" style="max-height:60px;overflow-y:auto;font-size:0.58rem">{{ exportCode.slice(0,120) }}…</code>
-                  <button @click="copyExportCode" class="share-btn-copy"><i class="fa-solid" :class="_codeFlash ? 'fa-check' : 'fa-copy'"></i></button>
-                </div>
-              </div>
-              <div class="share-divider"><span>import from coworker</span></div>
-              <div class="share-join-row">
-                <input v-model="importCode" type="text" placeholder="Paste plan code…" class="share-input" @keyup.enter="importPlanData()" />
-                <button @click="importPlanData()" class="share-btn-join" :disabled="!importCode.trim()">Import</button>
-              </div>
-              <div v-if="importError" class="share-error" style="margin-top:8px"><i class="fa-solid fa-triangle-exclamation"></i> {{ importError }}</div>
-            </div>
-            <!-- Normal HTTP mode — real-time sync available -->
-            <div v-else>
-              <p class="share-desc">Create a shared room so anyone with the code can view and edit this plan in real time.</p>
-              
-              <button @click="createRoom" class="share-btn-primary"><i class="fa-solid fa-plus"></i> Create Room</button>
-              
-              <div class="share-divider"><span>or join an existing room</span></div>
-              <div class="share-join-row">
-                <input v-model="joinCode" type="text" placeholder="Paste room code…" class="share-input" @keyup.enter="joinRoom()" />
-                <button @click="joinRoom()" class="share-btn-join" :disabled="!joinCode.trim()">Join</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Connected state -->
-          <div v-else>
-            <div class="share-connected-badge">
-              <span class="dot-static" style="background:var(--safe)"></span>
-              <span>Room connected</span>
-            </div>
-            <p class="share-desc" style="margin-top:8px">Share this code or link with your collaborator. They open the HTML file in their browser and join with the code — no Claude chat needed.</p>
-
-            <div class="share-field-group">
-              <label class="share-field-label">Room Code</label>
-              <div class="share-copy-row">
-                <code class="share-code">{{ roomId }}</code>
-                <button @click="copyRoomCode" class="share-btn-copy">
-                  <i class="fa-solid" :class="_codeFlash ? 'fa-check' : 'fa-copy'"></i>
-                </button>
-              </div>
-            </div>
-
-            <div class="share-field-group" v-if="shareLink">
-              <label class="share-field-label">Direct Link</label>
-              <div class="share-copy-row">
-                <code class="share-code share-code-sm">{{ shareLink }}</code>
-                <button @click="copyShareLink" class="share-btn-copy">
-                  <i class="fa-solid" :class="_copyFlash ? 'fa-check' : 'fa-copy'"></i>
-                </button>
-              </div>
-            </div>
-
-            <div class="share-status">
-              <span class="sync-dot-inline" :class="syncStatus==='saved'||syncStatus==='synced' ? 'dot-green' : syncStatus==='pending' ? 'dot-amber' : 'dot-dim'"></span>
-              {{ syncLabel }} — polls every 3s
-            </div>
-            
-            <button @click="disconnectRoom" class="share-btn-disconnect"><i class="fa-solid fa-link-slash"></i> Disconnect</button>
-          </div>
-
-          <div v-if="roomError" class="share-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ roomError }}</div>
-        </div>
+      <div class="btn-ghost" :class="{'btn-ghost-active': syncStatus==='saved'||syncStatus==='synced'}" style="cursor:default">
+        <i class="fa-solid fa-bolt" style="font-size:0.68rem"></i>
+        <span class="sync-dot-inline" :class="syncStatus==='saved'||syncStatus==='synced' ? 'dot-green' : syncStatus==='pending' ? 'dot-amber' : 'dot-dim'"></span>
+        {{ syncLabel }}
       </div>
       <button @click="resetPlan" class="btn-ghost" title="Reset to defaults">
         <i class="fa-solid fa-rotate-left" style="font-size:0.68rem"></i> Reset
@@ -931,7 +843,7 @@ body.pdf-export-mode .cmd-bar, body.pdf-export-mode .runway-strip { display: non
 </div><!-- /reportContent -->
 
 <div class="no-print" style="text-align:center;padding:18px;font-family:var(--display);font-size:0.64rem;color:#aab4c2;letter-spacing:0.01em">
-  Collaborators join automatically · Changes sync every 3s · {{ reportDate }}
+  Always live · Real-time sync via Supabase · {{ reportDate }}
 </div>
 
 </div><!-- /app -->
@@ -971,15 +883,19 @@ function layoutTree(roots) {
   roots.forEach(r=>{walkSize(r);place(r,startX,30);startX+=r._w+H_GAP*2;});
 }
 
+// ═══════════════════════════════════════════════════════
+// SUPABASE CONFIGURATION — Fill in your own values
+// ═══════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://ujpcntxrmfstmcgalhre.supabase.co';  // ✅ done
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqcGNudHhybWZzdG1jZ2FsaHJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MzgyNDUsImV4cCI6MjA5ODQxNDI0NX0.cKsfkIZCiJ0oxMtpZ_iP283s1pbGRHBaQdo6mRk_KgA';  // ✅ done
+const PLAN_ID      = 'main';  // single shared plan — all users read/write this row
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 createApp({
   data(){return{
     startingCapital:0,nextCapexId:7,nextOpexId:12,nextAnnualId:9,isExporting:false,
-    syncStatus:'idle', // idle | pending | saved | synced | local | error
-    _saveTimer:null,_lastSaveTs:0,_skipWatch:false,_pollInterval:null,
-    // Collaboration room
-    roomId:null,showSharePanel:false,joinCode:'',shareLink:'',roomError:'',
-    _copyFlash:false,_codeFlash:false,
-    importCode:'',importError:'',exportCode:'',showExport:false,showImport:false,
+    syncStatus:'connecting', // connecting | pending | saved | synced | error
+    _saveTimer:null,_lastSaveTs:0,_skipWatch:false,_realtimeSub:null,
     // One-time capital purchases. Sample EGP estimates for an 8-person
     // network/VoIP integrator — edit each line to your own quotes.
     capexItems:[
@@ -1082,10 +998,9 @@ createApp({
     runwayNote(){if(!this.runwayMonths)return'Add expenses';if(this.runwayMonths<6)return'Fundraise now';if(this.runwayMonths<12)return'Start raising';if(this.runwayMonths<18)return'Plan next round';return'Well capitalized';},
     runwayBadgeClass(){if(!this.runwayMonths)return'idle';if(this.runwayMonths<6)return'danger';if(this.runwayMonths<12)return'warn';return'safe';},
     reportDate(){return new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});},
-    isFileProtocol(){return window.location.protocol==='file:';},
     syncLabel(){
-      if(!this.roomId){const m={idle:'Local',pending:'Saving…',saved:'Local',local:'Local',error:'Error'};return m[this.syncStatus]||'Local';}
-      const m={idle:'Connected',pending:'Syncing…',saved:'Synced ✓',synced:'Updated ✓',local:'Local only',error:'Offline'};return m[this.syncStatus]||'';
+      const m={connecting:'Connecting…',pending:'Saving…',saved:'Live ✓',synced:'Updated ✓',error:'Offline'};
+      return m[this.syncStatus]||'';
     },
     canvasInnerStyle(){return{transform:`scale(${this.canvasScale}) translate(${this.canvasX}px,${this.canvasY}px)`,transformOrigin:'0 0',width:this.svgSize.w+'px',height:this.svgSize.h+'px',position:'relative'};},
     orgEdges(){
@@ -1124,25 +1039,13 @@ createApp({
     async _doSave(){
       const snap=this._getSnapshot();
       this._lastSaveTs=snap._ts;
-      // Always save locally as a cache
       try{localStorage.setItem('connectiq-plan-v2',JSON.stringify(snap));}catch(e){}
-      // If connected to a room, push to cloud
-      if(this.roomId){
-        try{
-          const r=await fetch('https://api.npoint.io/'+this.roomId,{
-            method:'POST',
-            headers:{'Content-Type':'application/json','Accept':'application/json'},
-            body:JSON.stringify(snap)
-          });
-          this.syncStatus=r.ok?'saved':'error';
-        }catch(e){this.syncStatus='error';}
-      }else{this.syncStatus='local';}
-    },
-    async loadLocal(){
       try{
-        const raw=localStorage.getItem('connectiq-plan-v2');
-        if(raw)this._applySnap(JSON.parse(raw));
-      }catch(e){}
+        const {error}=await supabase
+          .from('plans')
+          .upsert({id:PLAN_ID,data:snap,ts:snap._ts,updated_at:new Date().toISOString()});
+        this.syncStatus=error?'error':'saved';
+      }catch(e){this.syncStatus='error';}
     },
     _applySnap(s){
       this._skipWatch=true;
@@ -1155,125 +1058,49 @@ createApp({
       this._lastSaveTs=s._ts||0;
       this.$nextTick(()=>{this._skipWatch=false;});
     },
-    // ---- Room collaboration via npoint.io ----
-    async createRoom(){
-      this.roomError='';
+    async _connectSupabase(){
+      // Load existing plan or create it
       try{
-        const snap=this._getSnapshot();
-        const r=await fetch('https://api.npoint.io/',{
-          method:'POST',
-          headers:{'Content-Type':'application/json','Accept':'application/json'},
-          body:JSON.stringify(snap)
-        });
-        if(!r.ok)throw new Error('API returned '+r.status);
-        
-        const data = await r.json();
-        const blobId = data.id; 
-        
-        if(!blobId)throw new Error('Could not extract room ID from response');
-        
-        this.roomId=blobId;
-        this._lastSaveTs=snap._ts;
-        this.shareLink=window.location.origin+window.location.pathname+'#room='+blobId;
-        this.syncStatus='saved';
-        this._startPolling();
-        
-        try{localStorage.setItem('connectiq-roomId',blobId);}catch(e){}
-      }catch(e){
-        console.error('Create room:',e);
-        this.roomError='Could not create room. (Error: ' + e.message + ')';
-      }
-    },
-    async joinRoom(code){
-      const id=(code||this.joinCode||'').trim();
-      if(!id)return;
-      this.roomError='';
-      try{
-        const r=await fetch('https://api.npoint.io/'+id,{
-          headers:{'Accept':'application/json'}
-        });
-        if(!r.ok)throw new Error('Room not found ('+r.status+')');
-        
-        const data=await r.json();
-        this._applySnap(data);
-        this.roomId=id;
-        this._lastSaveTs=data._ts||0;
-        this.shareLink=window.location.origin+window.location.pathname+'#room='+id;
-        this.syncStatus='synced';
-        this.recomputeLevels();this.autoLayout();
-        this._startPolling();
-        
-        try{localStorage.setItem('connectiq-roomId',id);}catch(e){}
-      }catch(e){
-        console.error('Join room:',e);
-        this.roomError='Could not join — double-check the room code and your internet.';
-      }
-    },
-    async pollRemote(){
-      if(!this.roomId)return;
-      try{
-        const r=await fetch('https://api.npoint.io/'+this.roomId,{
-          headers:{'Accept':'application/json'}
-        });
-        if(!r.ok)return;
-        
-        const data=await r.json();
-        if(data._ts && data._ts!==this._lastSaveTs){
-          this._applySnap(data);
-          this.syncStatus='synced';
-          this.recomputeLevels();
+        const {data,error}=await supabase
+          .from('plans')
+          .select('*')
+          .eq('id',PLAN_ID)
+          .maybeSingle();
+        if(data&&data.data){
+          this._applySnap(data.data);
+          this._lastSaveTs=data.ts||0;
+        }else{
+          // No plan exists yet — seed it with current defaults
+          const snap=this._getSnapshot();
+          await supabase.from('plans').upsert({id:PLAN_ID,data:snap,ts:snap._ts,updated_at:new Date().toISOString()});
+          this._lastSaveTs=snap._ts;
         }
-      }catch(e){/* network hiccup */}
-    },
-    _startPolling(){
-      if(this._pollInterval)clearInterval(this._pollInterval);
-      this._pollInterval=setInterval(()=>this.pollRemote(),3000);
-    },
-    disconnectRoom(){
-      if(this._pollInterval)clearInterval(this._pollInterval);
-      this.roomId=null;this.shareLink='';this.syncStatus='local';
-      try{localStorage.removeItem('connectiq-roomId');}catch(e){}
-    },
-    async copyShareLink(){
-      try{
-        await navigator.clipboard.writeText(this.shareLink);
-        this._copyFlash=true;
-        setTimeout(()=>{this._copyFlash=false;},2000);
-      }catch(e){}
-    },
-    async copyRoomCode(){
-      try{
-        await navigator.clipboard.writeText(this.roomId);
-        this._codeFlash=true;
-        setTimeout(()=>{this._codeFlash=false;},2000);
-      }catch(e){}
+        this.syncStatus='synced';
+      }catch(e){
+        // Offline fallback — load from localStorage
+        try{const raw=localStorage.getItem('connectiq-plan-v2');if(raw)this._applySnap(JSON.parse(raw));}catch(ex){}
+        this.syncStatus='error';
+      }
+      // Subscribe to Realtime for instant updates from other users
+      this._realtimeSub=supabase
+        .channel('plan-sync')
+        .on('postgres_changes',
+          {event:'*',schema:'public',table:'plans',filter:'id=eq.'+PLAN_ID},
+          (payload)=>{
+            const row=payload.new;
+            if(row&&row.ts&&row.ts!==this._lastSaveTs){
+              this._applySnap(row.data);
+              this._lastSaveTs=row.ts;
+              this.syncStatus='synced';
+              this.recomputeLevels();
+            }
+          })
+        .subscribe();
     },
     resetPlan(){
-      if(!confirm('Reset everything?'))return;
-      try{localStorage.removeItem('connectiq-plan-v2');localStorage.removeItem('connectiq-roomId');}catch(e){}
-      window.location.hash='';
+      if(!confirm('Reset everything to defaults?'))return;
+      try{localStorage.removeItem('connectiq-plan-v2');}catch(e){}
       location.reload();
-    },
-    exportPlanData(){
-      try{
-        const snap=this._getSnapshot();
-        this.exportCode=btoa(unescape(encodeURIComponent(JSON.stringify(snap))));
-        this.showExport=true;
-      }catch(e){this.roomError='Export failed: '+e.message;}
-    },
-    async copyExportCode(){
-      try{await navigator.clipboard.writeText(this.exportCode);this._codeFlash=true;setTimeout(()=>{this._codeFlash=false;},2000);}catch(e){}
-    },
-    importPlanData(){
-      this.importError='';
-      if(!this.importCode.trim()){this.importError='Paste code first.';return;}
-      try{
-        const json=decodeURIComponent(escape(atob(this.importCode.trim())));
-        const snap=JSON.parse(json);
-        this._applySnap(snap);
-        this.recomputeLevels();this.autoLayout();
-        this.save();
-      }catch(e){this.importError='Invalid code.';}
     },
     selectOrgNode(node){if(this.draggingNode)return;this.selectedOrgNode=node;},
     recomputeLevels(){const{map,roots}=buildTree(this.orgNodes);computeLevels(roots,map);this.orgNodes.forEach(n=>{n.level=map[n.id]?.level??0;});},
@@ -1311,25 +1138,11 @@ createApp({
     orgNodes:{handler(){if(!this._skipWatch)this.save();},deep:true}
   },
   async mounted(){
-    // === MASTER ROOM CONFIGURATION ===
-    // 1. Create a room on your site first.
-    // 2. Copy the resulting ID (e.g., '12345abcdef')
-    // 3. Paste it between the quotes below.
-    const MASTER_ROOM_ID = ''; 
-
-    try {
-      if (MASTER_ROOM_ID && MASTER_ROOM_ID !== '') {
-        await this.joinRoom(MASTER_ROOM_ID);
-      } else {
-         await this.loadLocal();
-      }
-    } catch(e) {
-      await this.loadLocal();
-    }
+    await this._connectSupabase();
     this.recomputeLevels();
     this.autoLayout();
   },
-  beforeUnmount(){if(this._pollInterval)clearInterval(this._pollInterval);}
+  beforeUnmount(){if(this._realtimeSub)supabase.removeChannel(this._realtimeSub);}
 }).mount('#app');
 </script>
 </body>
