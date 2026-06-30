@@ -849,6 +849,7 @@ body.pdf-export-mode .cmd-bar, body.pdf-export-mode .runway-strip { display: non
 </div><!-- /app -->
 
 <script>
+function startConnectIQ() {
 const { createApp } = Vue;
 const NODE_W=160, NODE_H=72, H_GAP=40, V_GAP=60;
 
@@ -884,12 +885,14 @@ function layoutTree(roots) {
 }
 
 // ═══════════════════════════════════════════════════════
-// SUPABASE CONFIGURATION — Fill in your own values
+// SUPABASE CONFIGURATION
 // ═══════════════════════════════════════════════════════
-const SUPABASE_URL = 'https://ujpcntxrmfstmcgalhre.supabase.co';  // ✅ done
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqcGNudHhybWZzdG1jZ2FsaHJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MzgyNDUsImV4cCI6MjA5ODQxNDI0NX0.cKsfkIZCiJ0oxMtpZ_iP283s1pbGRHBaQdo6mRk_KgA';  // ✅ done
-const PLAN_ID      = 'main';  // single shared plan — all users read/write this row
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL = 'https://ujpcntxrmfstmcgalhre.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqcGNudHhybWZzdG1jZ2FsaHJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MzgyNDUsImV4cCI6MjA5ODQxNDI0NX0.cKsfkIZCiJ0oxMtpZ_iP283s1pbGRHBaQdo6mRk_KgA';
+const PLAN_ID      = 'main';
+let supabase = null;
+try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
+catch(e) { console.error('Supabase init failed:', e); }
 
 createApp({
   data(){return{
@@ -1040,6 +1043,7 @@ createApp({
       const snap=this._getSnapshot();
       this._lastSaveTs=snap._ts;
       try{localStorage.setItem('connectiq-plan-v2',JSON.stringify(snap));}catch(e){}
+      if(!supabase){this.syncStatus='error';return;}
       try{
         const {error}=await supabase
           .from('plans')
@@ -1059,6 +1063,12 @@ createApp({
       this.$nextTick(()=>{this._skipWatch=false;});
     },
     async _connectSupabase(){
+      if(!supabase){
+        // Supabase didn't load — fall back to localStorage
+        try{const raw=localStorage.getItem('connectiq-plan-v2');if(raw)this._applySnap(JSON.parse(raw));}catch(ex){}
+        this.syncStatus='error';
+        return;
+      }
       // Load existing plan or create it
       try{
         const {data,error}=await supabase
@@ -1142,8 +1152,24 @@ createApp({
     this.recomputeLevels();
     this.autoLayout();
   },
-  beforeUnmount(){if(this._realtimeSub)supabase.removeChannel(this._realtimeSub);}
+  beforeUnmount(){if(this._realtimeSub&&supabase)supabase.removeChannel(this._realtimeSub);}
 }).mount('#app');
+}
+
+// Wait until the page and the Vue CDN are ready before starting.
+// This prevents the raw {{ }} flash if a CDN script is slow to load.
+(function waitForVue(tries){
+  if (typeof Vue !== 'undefined') {
+    startConnectIQ();
+  } else if (tries < 100) {
+    setTimeout(function(){ waitForVue(tries + 1); }, 100);
+  } else {
+    document.getElementById('app').innerHTML =
+      '<div style="padding:40px;font-family:sans-serif;text-align:center;color:#b45309">' +
+      '<h2>Could not load Vue.js</h2>' +
+      '<p>The page needs internet access to load its libraries. Check your connection and refresh.</p></div>';
+  }
+})(0);
 </script>
 </body>
 </html>
