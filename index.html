@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Connect IQ — Payroll &amp; Org Plan</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js';document.head.appendChild(s);"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -767,6 +767,15 @@ body.pdf-export-mode .hero { display: none !important; }
           <div class="section-title">Payroll Detail — Net to Gross</div>
           <div class="section-sub">How each Net salary grosses up to full employer cost</div>
         </div>
+        <div style="flex:1"></div>
+        <button v-if="editingPayroll" @click="addPayrollRow" class="add-row-btn no-print" style="margin-right:8px">
+          <i class="fa-solid fa-plus" style="font-size:0.58rem"></i> Add Row
+        </button>
+        <button @click="editingPayroll = !editingPayroll" class="add-row-btn no-print"
+                :style="editingPayroll ? 'background:var(--safe);color:#fff;border-color:var(--safe)' : ''">
+          <i :class="editingPayroll ? 'fa-solid fa-check' : 'fa-solid fa-pen'" style="font-size:0.58rem"></i>
+          {{ editingPayroll ? 'Done' : 'Edit' }}
+        </button>
       </div>
       <div class="card" style="padding:22px 26px">
         <p style="font-size:0.74rem;color:var(--txt-2);line-height:1.5;margin:0 0 14px">
@@ -779,24 +788,44 @@ body.pdf-export-mode .hero { display: none !important; }
         <table class="data-table">
           <thead>
             <tr>
-              <th style="width:24%">Position</th>
+              <th style="width:22%">Position</th>
               <th class="r">Staff</th>
               <th class="r">Net (EGP)</th>
               <th class="r">Gross Base</th>
               <th class="r">Tax + Ins. Absorbed</th>
               <th class="r">Employer Ins. (18.75%)</th>
               <th class="r">Total Cost / Employee</th>
+              <th v-if="editingPayroll" class="no-print" style="width:4%"></th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in payrollDetail" :key="row.role">
-              <td>{{ row.role }}</td>
-              <td class="r mono">{{ row.count }}</td>
-              <td class="r mono">{{ formatNum(row.net) }}</td>
-              <td class="r mono">{{ formatNum(row.gross) }}</td>
-              <td class="r mono">{{ formatNum(row.absorbed) }}</td>
-              <td class="r mono">{{ formatNum(row.employerIns) }}</td>
-              <td class="r mono" style="font-weight:600;color:var(--txt)">{{ formatNum(row.totalCost) }}</td>
+            <tr v-for="(row, idx) in payrollDetail" :key="idx">
+              <!-- Read-only view -->
+              <template v-if="!editingPayroll">
+                <td>{{ row.role }}</td>
+                <td class="r mono">{{ row.count }}</td>
+                <td class="r mono">{{ formatNum(row.net) }}</td>
+                <td class="r mono">{{ formatNum(payrollComputed[idx].gross) }}</td>
+                <td class="r mono">{{ formatNum(payrollComputed[idx].absorbed) }}</td>
+                <td class="r mono">{{ formatNum(payrollComputed[idx].employerIns) }}</td>
+                <td class="r mono" style="font-weight:600;color:var(--txt)">{{ formatNum(payrollComputed[idx].totalCost) }}</td>
+              </template>
+              <!-- Edit view: only Role, Staff, Net are editable — rest auto-compute from Egypt 2026 payroll rules -->
+              <template v-else>
+                <td><input v-model="row.role" type="text" placeholder="Role" class="row-input" /></td>
+                <td><input v-model.number="row.count" type="number" min="0" placeholder="0" class="row-input mono" style="text-align:right;width:60px" /></td>
+                <td><input v-model.number="row.net" type="number" min="0" placeholder="0" class="row-input mono" style="text-align:right;width:100px" /></td>
+                <td class="r mono" title="Auto-computed: gross-up so Net = Gross − 11% social insurance − income tax">{{ formatNum(payrollComputed[idx].gross) }}</td>
+                <td class="r mono" title="Auto-computed: Gross − Net">{{ formatNum(payrollComputed[idx].absorbed) }}</td>
+                <td class="r mono" title="Auto-computed: 18.75% × min(Gross, 16,700 EGP cap)">{{ formatNum(payrollComputed[idx].employerIns) }}</td>
+                <td class="r mono" style="font-weight:600;color:var(--txt);padding-right:8px" title="Auto-computed: Gross + Employer Ins.">{{ formatNum(payrollComputed[idx].totalCost) }}</td>
+                <td class="no-print" style="text-align:right">
+                  <button @click="removePayrollRow(idx)" class="delete-btn" title="Remove row"><i class="fa-solid fa-xmark" style="font-size:0.62rem"></i></button>
+                </td>
+              </template>
+            </tr>
+            <tr v-if="payrollDetail.length === 0">
+              <td :colspan="editingPayroll ? 8 : 7"><div class="empty-state"><i class="fa-solid fa-plus-circle"></i>No payroll rows yet — click <b>Edit</b> then <b>Add Row</b></div></td>
             </tr>
           </tbody>
           <tfoot>
@@ -808,9 +837,14 @@ body.pdf-export-mode .hero { display: none !important; }
               <td class="r total-value">{{ formatNum(payrollTotalGross - payrollTotalNet) }}</td>
               <td class="r total-value">{{ formatNum(payrollTotalEmployerIns) }}</td>
               <td class="r total-value">{{ formatNum(payrollTotalOutlay) }}</td>
+              <td v-if="editingPayroll" class="no-print"></td>
             </tr>
           </tfoot>
         </table>
+        <p v-if="editingPayroll" style="font-size:0.68rem;color:var(--txt-3);margin:10px 0 0;line-height:1.5">
+          <i class="fa-solid fa-circle-info" style="color:var(--amber);margin-right:4px"></i>
+          Enter each employee's target <b>Net</b> — Gross, Tax + Ins. Absorbed, Employer Ins. and Total Cost auto-calculate using Egypt's 2026 payroll rules: 11% employee &amp; 18.75% employer social insurance (capped at 16,700 EGP insurable wage) plus progressive income tax (0/10/15/20/22.5/25/27.5%) with a 20,000 EGP annual personal exemption. Edits sync live to all users.
+        </p>
       </div>
     </div>
 
@@ -1059,6 +1093,7 @@ createApp({
     // insurance (capped at 16,700 EGP wage) plus progressive income tax.
     // employerIns = 18.75% employer social insurance share.
     // totalCost = grossBase + employerIns  (full monthly cost to the company).
+    editingPayroll:false,
     payrollDetail:[
       {role:'Network Engineer',     count:1, net:40000, gross:51320, absorbed:11320, employerIns:3131, totalCost:54451},
       {role:'VoIP Engineer',        count:1, net:30000, gross:37130, absorbed:7130,  employerIns:3131, totalCost:40261},
@@ -1091,11 +1126,19 @@ createApp({
     svgSize:{w:900,h:500}
   };},
   computed:{
+    // --- Payroll: derive Gross / Absorbed / Employer Ins. / Total from Net ---
+    // Uses Egypt 2026 statutory rules — see computeEgyptPayroll method below.
+    payrollComputed(){
+      return this.payrollDetail.map(r=>{
+        const calc=this.computeEgyptPayroll(r.net);
+        return{...r,gross:calc.gross,absorbed:calc.absorbed,employerIns:calc.employerIns,totalCost:calc.totalCost};
+      });
+    },
     // --- Payroll budget summary, derived from per-employee rows ---
-    payrollHeadcount(){return this.payrollDetail.reduce((s,r)=>s+r.count,0);},
-    payrollTotalNet(){return this.payrollDetail.reduce((s,r)=>s+r.count*r.net,0);},
-    payrollTotalGross(){return this.payrollDetail.reduce((s,r)=>s+r.count*r.gross,0);},
-    payrollTotalEmployerIns(){return this.payrollDetail.reduce((s,r)=>s+r.count*r.employerIns,0);},
+    payrollHeadcount(){return this.payrollComputed.reduce((s,r)=>s+(Number(r.count)||0),0);},
+    payrollTotalNet(){return this.payrollComputed.reduce((s,r)=>s+(Number(r.count)||0)*(Number(r.net)||0),0);},
+    payrollTotalGross(){return this.payrollComputed.reduce((s,r)=>s+(Number(r.count)||0)*r.gross,0);},
+    payrollTotalEmployerIns(){return this.payrollComputed.reduce((s,r)=>s+(Number(r.count)||0)*r.employerIns,0);},
     payrollTotalOutlay(){return this.payrollTotalGross+this.payrollTotalEmployerIns;},
     totalCapex(){return this.capexItems.reduce((s,i)=>s+(Number(i.amount)||0),0);},
     totalMonthlyOpex(){return this.opexItems.reduce((s,i)=>s+(Number(i.amount)||0),0);},
@@ -1149,6 +1192,51 @@ createApp({
     removeOpexItem(id){this.opexItems=this.opexItems.filter(i=>i.id!==id);},
     addAnnualItem(){this.annualItems.push({id:this.nextAnnualId++,name:'',category:'',amount:0});},
     removeAnnualItem(id){this.annualItems=this.annualItems.filter(i=>i.id!==id);},
+    addPayrollRow(){this.payrollDetail.push({role:'New Role',count:1,net:0});},
+    removePayrollRow(idx){this.payrollDetail.splice(idx,1);},
+    // ---------------------------------------------------------------
+    // Egypt payroll gross-up calculator (2026 statutory rules).
+    // Given a target monthly NET, returns { gross, absorbed, employerIns, totalCost }.
+    // Rules used (source: PwC Worldwide Tax Summaries, Feb 2026 review):
+    //  • Employee social insurance: 11% of min(gross, 16,700 EGP monthly cap)
+    //  • Employer social insurance: 18.75% of min(gross, 16,700 EGP monthly cap)
+    //  • Annual personal exemption: 20,000 EGP
+    //  • Progressive income tax on (gross − employeeSI)×12 − 20,000:
+    //      0-40k:0%, 40-55k:10%, 55-70k:15%, 70-200k:20%,
+    //      200-400k:22.5%, 400k-1.2M:25%, >1.2M:27.5%
+    // Gross is solved by binary search since the tax fn is piecewise linear.
+    computeEgyptPayroll(monthlyNet){
+      const net=Number(monthlyNet)||0;
+      if(net<=0)return{gross:0,absorbed:0,employerIns:0,totalCost:0};
+      const SI_CAP=16700, EMP_SI=0.11, ER_SI=0.1875, EXEMPT=20000;
+      const brackets=[[40000,0],[55000,0.10],[70000,0.15],[200000,0.20],
+                      [400000,0.225],[1200000,0.25],[Infinity,0.275]];
+      const annualTax=(t)=>{
+        if(t<=0)return 0;
+        let tax=0,prev=0;
+        for(const [lim,rate] of brackets){
+          if(t<=lim){tax+=(t-prev)*rate;break;}
+          tax+=(lim-prev)*rate;prev=lim;
+        }
+        return tax;
+      };
+      const netFromGross=(g)=>{
+        const si=Math.min(g,SI_CAP)*EMP_SI;
+        const taxable=Math.max(0,(g-si)*12-EXEMPT);
+        return g-si-annualTax(taxable)/12;
+      };
+      // Binary search for the gross that yields the target net
+      let lo=net, hi=net*3+50000;
+      while(netFromGross(hi)<net)hi*=2;
+      for(let i=0;i<60;i++){
+        const mid=(lo+hi)/2;
+        if(netFromGross(mid)<net)lo=mid; else hi=mid;
+      }
+      const gross=Math.round((lo+hi)/2);
+      const employerIns=Math.round(Math.min(gross,SI_CAP)*ER_SI);
+      const absorbed=gross-net;
+      return{gross,absorbed,employerIns,totalCost:gross+employerIns};
+    },
     save(){
       clearTimeout(this._saveTimer);
       this.syncStatus='pending';
@@ -1157,6 +1245,7 @@ createApp({
     _getSnapshot(){
       return{_ts:Date.now(),startingCapital:this.startingCapital,capexItems:this.capexItems,
         opexItems:this.opexItems,annualItems:this.annualItems,orgNodes:this.orgNodes,
+        payrollDetail:this.payrollDetail,
         nextCapexId:this.nextCapexId,nextOpexId:this.nextOpexId,
         nextAnnualId:this.nextAnnualId,nextOrgId:this.nextOrgId};
     },
@@ -1179,6 +1268,7 @@ createApp({
       if(Array.isArray(s.opexItems))this.opexItems=s.opexItems;
       if(Array.isArray(s.annualItems))this.annualItems=s.annualItems;
       if(Array.isArray(s.orgNodes)&&s.orgNodes.length)this.orgNodes=s.orgNodes;
+      if(Array.isArray(s.payrollDetail)&&s.payrollDetail.length)this.payrollDetail=s.payrollDetail;
       ['nextCapexId','nextOpexId','nextAnnualId','nextOrgId'].forEach(k=>{if(typeof s[k]==='number')this[k]=s[k];});
       this._lastSaveTs=s._ts||0;
       this.$nextTick(()=>{this._skipWatch=false;});
@@ -1266,7 +1356,8 @@ createApp({
     capexItems:{handler(){if(!this._skipWatch)this.save();},deep:true},
     opexItems:{handler(){if(!this._skipWatch)this.save();},deep:true},
     annualItems:{handler(){if(!this._skipWatch)this.save();},deep:true},
-    orgNodes:{handler(){if(!this._skipWatch)this.save();},deep:true}
+    orgNodes:{handler(){if(!this._skipWatch)this.save();},deep:true},
+    payrollDetail:{handler(){if(!this._skipWatch)this.save();},deep:true}
   },
   async mounted(){
     await this._connectSupabase();
@@ -1282,13 +1373,16 @@ createApp({
 (function waitForVue(tries){
   if (typeof Vue !== 'undefined') {
     startConnectIQ();
-  } else if (tries < 100) {
+  } else if (tries < 200) {
     setTimeout(function(){ waitForVue(tries + 1); }, 100);
   } else {
     document.getElementById('app').innerHTML =
-      '<div style="padding:40px;font-family:sans-serif;text-align:center;color:#b45309">' +
+      '<div style="padding:40px;font-family:sans-serif;text-align:center;color:#b45309;max-width:600px;margin:40px auto">' +
       '<h2>Could not load Vue.js</h2>' +
-      '<p>The page needs internet access to load its libraries. Check your connection and refresh.</p></div>';
+      '<p>The page couldn\'t reach the Vue CDN (unpkg.com or jsdelivr.net).</p>' +
+      '<p style="font-size:0.9rem;color:#78350f;margin-top:16px">Try: (1) check your internet, (2) disable any ad blocker for this page, ' +
+      'or (3) if you opened this file directly, try serving it locally with <code style="background:#fef3c7;padding:2px 6px;border-radius:4px">python -m http.server</code> ' +
+      'and visit <code style="background:#fef3c7;padding:2px 6px;border-radius:4px">http://localhost:8000</code>.</p></div>';
   }
 })(0);
 </script>
